@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    /* ══ STUDENT DASHBOARD POLISH ══ */
+
+    /* ── Search Bar ── */
+    .search-bar-container {
+      margin-bottom: 2rem;
+    }
+    .search-wrapper {
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.25rem 0.85rem 3rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+    }
+    .search-wrapper::before {
+      content: '\f002';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      left: 1.1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: var(--bg-card-hover);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    /* ── Events Grid ── */
+    #eventsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* Event card - polish existing class */
+    .event-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .event-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .event-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .event-date, .event-location {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .event-date i, .event-location i {
+      color: var(--accent);
+      width: 14px;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+    .event-card > p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .event-card .btn-primary {
+      margin-top: auto;
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ── No Results Empty State ── */
+    .no-results {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--bg-card);
+      border: 1px dashed rgba(255,255,255,0.09);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      grid-column: 1 / -1;
+    }
+    .no-results i {
+      font-size: 2.4rem;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 1rem;
+    }
+    .no-results p { font-size: 0.95rem; }
+
+    /* ── Apply Form polish ── */
+    .form-select {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.1rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%238892a4' d='M0 0l5 7 5-7z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+      padding-right: 2.5rem;
+      -webkit-appearance: none;
+    }
+    .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .form-select option { background: var(--bg-card); color: var(--text-primary); }
+
+    /* Teacher email inputs */
+    .teacher-email {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .teacher-email:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .teacher-email::placeholder { color: var(--text-muted); }
+
+    /* ── Application Cards (student view) ── */
+    .app-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(22,26,40,0.85) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 1rem;
+    }
+    .app-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    .app-card:hover { border-color: var(--border-active); transform: translateY(-2px); }
+    .app-card:hover::before { opacity: 1; }
+    .app-card.pending  { border-left: 3px solid var(--warning); }
+    .app-card.approved { border-left: 3px solid var(--success); }
+    .app-card.rejected { border-left: 3px solid var(--danger);  }
+
+    .app-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+    .app-student-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+    .app-student-meta { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.3rem; }
+    .app-student-meta span { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; }
+    .app-student-meta i { color: var(--accent); font-size: 0.74rem; }
+
+    .status-badge { display: inline-flex; align-items: center; padding: 0.28rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; flex-shrink: 0; }
+    .status-badge.pending  { background: rgba(246,173,85,0.15);  color: var(--warning); border: 1px solid rgba(246,173,85,0.35); }
+    .status-badge.approved { background: rgba(104,211,145,0.15); color: var(--success); border: 1px solid rgba(104,211,145,0.35); }
+    .status-badge.rejected { background: rgba(252,129,129,0.15); color: var(--danger);  border: 1px solid rgba(252,129,129,0.35); }
+
+    .app-event-info { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; }
+    .app-event-name { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
+    .app-reason { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+    .app-timestamp { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+    .app-timestamp i { color: var(--accent2); }
+
+    /* ── Faculty Decisions Table ── */
+    .faculty-decisions-list {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .faculty-decisions-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent);
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(99,179,237,0.05);
+    }
+    .faculty-decisions-table { padding: 0.5rem 0; }
+    .faculty-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .faculty-row:last-child { border-bottom: none; }
+    .faculty-email { font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; }
+    .faculty-email i { color: var(--accent2); font-size: 0.74rem; }
+    .faculty-decision {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 12px;
+    }
+    .faculty-decision.approved { background: rgba(104,211,145,0.15); color: var(--success); }
+    .faculty-decision.rejected { background: rgba(252,129,129,0.15); color: var(--danger); }
+    .faculty-decision.pending  { background: rgba(246,173,85,0.12);  color: var(--warning); }
+
+    /* ── Acknowledge Confirmed ── */
+    .ack-confirmed {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--success);
+      padding: 0.5rem 1rem;
+      background: rgba(104,211,145,0.1);
+      border: 1px solid rgba(104,211,145,0.25);
+      border-radius: 8px;
+    }
+
+    .app-action-section { padding-top: 0.5rem; }
+
+    /* ── Compact app cards (mini view) ── */
+    .app-card-compact {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.75rem;
+      transition: var(--transition);
+    }
+    .app-card-compact:hover { border-color: var(--border-active); }
+    .app-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .app-title { font-weight: 700; color: var(--text-primary); font-size: 0.9rem; }
+    .app-teachers { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem; }
+    .app-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .app-message { font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem 0.85rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border); margin: 0.5rem 0; }
+    .app-actions-compact { margin-top: 0.5rem; }
+
+    /* Sync status indicator */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    #syncStatus { animation: spin 1.2s linear infinite; }
+
+    /* Applications grid in studentApplicationsContainer */
+    #studentApplicationsContainer .welcome-section h2 {
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+    <!-- HEADER & NAVIGATION -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i> Student Portal
+            </div>
+
+            <div class="nav-center">
+                <a href="#" class="nav-link active" data-section="events">
+                    <i class="fas fa-calendar-days"></i> Events
+                </a>
+                <a href="#" class="nav-link" data-section="apply">
+                    <i class="fas fa-paper-plane"></i> Apply
+                </a>
+                <a href="#" class="nav-link" data-section="profile">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </div>
+
+            <div class="nav-buttons">
+                <div class="user-greeting">
+                    Welcome, <strong id="headerUsername">{{ usr }}</strong>
+                </div>
+                <!-- Hidden data attributes to store current user info -->
+                <input type="hidden" id="currentUserEmail" value="{{ rgml }}">
+                <input type="hidden" id="currentUserPhone" value="{{ pNo }}">
+                <button class="btn btn-secondary" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- EVENTS SECTION -->
+        <section id="events" class="section active">
+            <div class="welcome-section" style="padding: 2rem; margin-bottom: 2rem;">
+                <h1 style="font-size: 1.8rem; margin-bottom: 0.3rem;"><i class="fas fa-calendar-check"></i> Upcoming Events</h1>
+                <p style="font-size: 1rem;">Discover and register for all the exciting events happening in your college</p>
+            </div>
+
+            <div class="search-bar-container">
+                <div class="search-wrapper">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Search events by name, date, or location..."
+                        onkeyup="searchEvents()"
+                    >
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
+                    <i id="syncStatus" class="fas fa-sync-alt" style="animation: spin 2s linear infinite; display: none;"></i>
+                    <span id="lastSyncText" style="margin-left: 0.5rem;">Syncing with server...</span>
+                </div>
+            </div>
+
+            <div class="events-grid" id="eventsGrid">
+            </div>
+        </section>
+
+        <!-- PROFILE SECTION -->
+        <section id="apply" class="section">
+            <div class="welcome-section">
+                <h1><i class="fas fa-paper-plane"></i> Application Form</h1>
+                <p>Send your event application to one or more teachers.</p>
+            </div>
+
+            <div class="profile-wrapper">
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <h2>Apply for Event</h2>
+                    </div>
+
+                    <div class="profile-info">
+                        <div class="info-group">
+                            <label><i class="fas fa-calendar-star"></i> Event</label>
+                            <select id="applicationEventName" class="form-select" required>
+                                <option value="">Select an event...</option>
+                            </select>
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-envelope"></i> Teacher Emails</label>
+                            <div id="teacherEmailsContainer">
+                                <input type="email" class="teacher-email" placeholder="Enter teacher email" />
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addTeacherEmailField()">
+                                <i class="fas fa-plus"></i> Add another email
+                            </button>
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-comment"></i> Message</label>
+                            <textarea id="applicationMessage" rows="5" placeholder="Write your message to the teachers"></textarea>
+                        </div>
+
+                        <div class="profile-buttons">
+                            <button class="btn btn-success" onclick="submitApplication()">
+                                <i class="fas fa-paper-plane"></i> Submit Application
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearApplicationForm()">
+                                <i class="fas fa-redo"></i> Clear Form
+                            </button>
+                        </div>
+
+                        <div id="applicationStatus" class="success-msg"></div>
+                        <div id="studentApplicationsContainer" style="margin-top:1.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="profile" class="section">
+            <div class="welcome-section">
+                <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+                <p>View and manage your student profile information</p>
+            </div>
+
+            <div class="profile-wrapper">
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <div class="profile-avatar">👨‍🎓</div>
+                        <h2 id="displayName" data-current-email="{{ rgml }}">{{ usr }}</h2>
+                    </div>
+
+                    <div class="profile-info">
+
+                        <div class="info-group">
+                            <label><i class="fas fa-user"></i> Full Name</label>
+                            <p id="displayFullName"> {{ usr }}</p>
+                            <input type="text" id="inputFullName" value="{{ usr }}" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-envelope"></i> Email</label>
+                            <p id="displayEmail"> {{ rgml }}</p>
+                            <input type="email" id="inputEmail" value="{{ rgml }}" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-phone"></i> Phone</label>
+                            <p id="displayPhone"> {{ pNo }} </p>
+                            <input type="tel" id="inputPhone" value="{{ pNo }}" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-lock"></i> New Password</label>
+                            <input type="password" id="inputPassword" class="hidden" placeholder="Leave blank to keep current password">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-lock"></i> Confirm Password</label>
+                            <input type="password" id="confirmPassword" class="hidden" placeholder="Confirm new password">
+                        </div>
+
+                        <div class="profile-buttons">
+                            <button class="btn btn-primary" id="editBtn" onclick="enableEditMode()">
+                                <i class="fas fa-edit"></i> Edit Profile
+                            </button>
+                            <button class="btn btn-success hidden" id="saveBtn" onclick="saveProfile()">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button class="btn btn-danger hidden" id="cancelBtn" onclick="disableEditMode()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Seamless UI updater to prevent pop-in animations during auto-refresh
+        function updateUISeamlessly(container, newHtml) {
+            if (!container || container.innerHTML === newHtml) return;
+            container.classList.add('silent-refresh');
+            if (document.startViewTransition) {
+                document.startViewTransition(() => {
+                    container.innerHTML = newHtml;
+                });
+            } else {
+                container.innerHTML = newHtml;
+            }
+        }
+
+        // Add teacher email field
+        function addTeacherEmailField() {
+            const container = document.getElementById('teacherEmailsContainer');
+            const input = document.createElement('input');
+            input.type = 'email';
+            input.className = 'teacher-email';
+            input.placeholder = 'Enter teacher email';
+            container.appendChild(input);
+        }
+
+        // Format date/time for display
+        function formatEventDate(startDate, startTime, endDate, endTime) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            
+            const startFormatted = start.toLocaleDateString('en-US', options);
+            const endFormatted = end.toLocaleDateString('en-US', options);
+            
+            // If same day, show date with time range
+            if (startDate === endDate) {
+                return `${startFormatted} | ${startTime} - ${endTime}`;
+            }
+            // If different days, show both dates with times
+            return `${startFormatted} ${startTime} to ${endFormatted} ${endTime}`;
+        }
+
+        // Load events from server
+        async function loadEvents() {
+            try {
+                // Show syncing indicator
+                const syncIcon = document.getElementById('syncStatus');
+                const syncText = document.getElementById('lastSyncText');
+                if (syncIcon) syncIcon.style.display = 'inline-block';
+                
+                console.log('[Events] Fetching from /get_events...');
+                const response = await fetch('/get_events');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const events = await response.json();
+                console.log('[Events] Received:', events);
+                
+                // Handle case where response might be wrapped in an object
+                if (events && events.events) {
+                    eventsData = events.events;
+                } else if (Array.isArray(events)) {
+                    eventsData = events;
+                } else {
+                    eventsData = [];
+                }
+                
+                console.log('[Events] Processed data:', eventsData);
+                displayEvents(eventsData);
+                populateEventDropdown(eventsData);
+                
+                // Update sync status
+                if (syncIcon) syncIcon.style.display = 'none';
+                if (syncText) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString();
+                    syncText.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Last updated: ${timeStr}`;
+                }
+            } catch (error) {
+                console.error('[Events] Error loading events:', error);
+                eventsData = [];
+                displayEvents([]);
+                
+                // Update sync status to error
+                const syncIcon = document.getElementById('syncStatus');
+                const syncText = document.getElementById('lastSyncText');
+                if (syncIcon) syncIcon.style.display = 'none';
+                if (syncText) syncText.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--danger);"></i> Sync error - retrying...`;
+            }
+        }
+
+        // Display all events on page
+        function displayEvents(events) {
+            const eventsGrid = document.getElementById('eventsGrid');
+            
+            // Filter out expired events
+            const now = new Date();
+            const activeEvents = events.filter(event => {
+                try {
+                    const eventEndDateTime = new Date(`${event.endDate}T${event.endTime}`);
+                    return eventEndDateTime > now;
+                } catch (e) {
+                    console.error('[Events] Error parsing event time:', e);
+                    return true; // Keep if we can't parse
+                }
+            });
+            
+            if (!activeEvents || activeEvents.length === 0) {
+                const newHtml = `
+                    <div class="no-results" style="grid-column: 1/-1;">
+                        <i class="fas fa-inbox"></i>
+                        <p>No active events available at the moment. Check back soon!</p>
+                    </div>
+                `;
+                updateUISeamlessly(eventsGrid, newHtml);
+                return;
+            }
+            
+            console.log(`[Events] Displaying ${activeEvents.length} active event(s)`);
+
+            const newHtml = activeEvents.map(event => `
+                <div class="event-card">
+                    <h3>${event.name}</h3>
+                    <div class="event-meta">
+                        <div class="event-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            ${formatEventDate(event.startDate, event.startTime, event.endDate, event.endTime)}
+                        </div>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${event.location}
+                        </div>
+                    </div>
+                    <p>${event.description}</p>
+                    <button class="btn btn-primary" onclick="registerEvent('${event.name}')">
+                        <i class="fas fa-check"></i> Register Now
+                    </button>
+                </div>
+            `).join('');
+            
+            updateUISeamlessly(eventsGrid, newHtml);
+        }
+
+        // Populate event dropdown in apply form
+        function populateEventDropdown(events) {
+            const dropdown = document.getElementById('applicationEventName');
+            if (!dropdown) return;
+            
+            // Preserve current selection
+            const currentValue = dropdown.value;
+            
+            // Clear existing options except the first one
+            dropdown.innerHTML = '<option value="">Select an event...</option>';
+            
+            // Add events as options
+            events.forEach(event => {
+                const option = document.createElement('option');
+                option.value = event.name;
+                option.textContent = event.name;
+                dropdown.appendChild(option);
+            });
+            
+            // Restore selection if it still exists
+            if (currentValue) {
+                dropdown.value = currentValue;
+            }
+        }
+
+        // Filter and display applications for selected event
+
+
+        // Clear the application form
+        function clearApplicationForm() {
+            document.getElementById('applicationMessage').value = '';
+            Array.from(document.querySelectorAll('.teacher-email')).forEach((input, index) => {
+                if (index > 0) input.remove();
+                else input.value = '';
+            });
+            document.getElementById('applicationStatus').textContent = '';
+            document.getElementById('studentApplicationsContainer').innerHTML = '';
+        }
+
+        // Search events function
+        function searchEvents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (searchTerm.trim() === '') {
+                displayEvents(eventsData);
+                return;
+            }
+
+            const filteredEvents = eventsData.filter(event => 
+                event.name.toLowerCase().includes(searchTerm) ||
+                event.startDate.toLowerCase().includes(searchTerm) ||
+                event.location.toLowerCase().includes(searchTerm) ||
+                event.description.toLowerCase().includes(searchTerm)
+            );
+
+            displayEvents(filteredEvents);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEvents();  // Load real events from server immediately
+            loadStudentApplications();
+            
+            // Add event listener to filter applications when event is selected
+            const eventDropdown = document.getElementById('applicationEventName');
+            if (eventDropdown) {
+                eventDropdown.addEventListener('change', function() {
+                    // Re-enable animations for manual interaction so the UI "transits" smoothly
+                    document.querySelectorAll('.silent-refresh').forEach(el => el.classList.remove('silent-refresh'));
+                    renderStudentApplications(studentApplicationsData);
+                });
+            }
+            
+            // Auto-refresh events and applications every 10 seconds for real-time updates
+            const refreshInterval = setInterval(() => {
+                console.log('[Real-time] Auto-refreshing data...');
+                loadEvents();
+                loadStudentApplications();
+            }, 10000);
+        });
+
+        // Navigation functionality
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all links and sections
+                navLinks.forEach(l => l.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+
+                // Add active class to clicked link and corresponding section
+                this.classList.add('active');
+                const sectionId = this.getAttribute('data-section');
+                document.getElementById(sectionId).classList.add('active');
+                
+                // Re-enable animations on manual tab switch
+                document.querySelectorAll('.silent-refresh').forEach(el => el.classList.remove('silent-refresh'));
+            });
+        });
+
+        // Logout function
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/';
+            }
+        }
+
+        function switchToSection(sectionId) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            const targetLink = Array.from(navLinks).find(link => link.getAttribute('data-section') === sectionId);
+            if (targetLink) targetLink.classList.add('active');
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) targetSection.classList.add('active');
+            
+            // Re-enable animations on manual tab switch
+            document.querySelectorAll('.silent-refresh').forEach(el => el.classList.remove('silent-refresh'));
+        }
+
+        function addTeacherEmailField() {
+            const container = document.getElementById('teacherEmailsContainer');
+            const input = document.createElement('input');
+            input.type = 'email';
+            input.className = 'teacher-email';
+            input.placeholder = 'Enter teacher email';
+            container.appendChild(input);
+        }
+
+        function registerEvent(eventName) {
+            switchToSection('apply');
+            const dropdown = document.getElementById('applicationEventName');
+            if (dropdown) {
+                dropdown.value = eventName;
+            }
+            document.getElementById('applicationMessage').focus();
+        }
+
+        async function submitApplication() {
+            const studentName = document.getElementById('displayFullName').textContent.trim();
+            const studentEmail = document.getElementById('currentUserEmail').value.trim();
+            const eventName = document.getElementById('applicationEventName').value.trim();
+            const message = document.getElementById('applicationMessage').value.trim();
+            const teacherEmails = Array.from(document.querySelectorAll('.teacher-email')).map(input => input.value.trim()).filter(Boolean);
+            const statusEl = document.getElementById('applicationStatus');
+
+            if (!eventName) {
+                statusEl.textContent = 'Please choose an event first.';
+                return;
+            }
+            if (!teacherEmails.length) {
+                statusEl.textContent = 'Enter at least one teacher email.';
+                return;
+            }
+            if (!message) {
+                statusEl.textContent = 'Write a message to the teachers.';
+                return;
+            }
+
+            statusEl.textContent = '';
+            const response = await fetch('/submit_application', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_name: studentName,
+                    student_email: studentEmail,
+                    event_name: eventName,
+                    teacher_emails: teacherEmails,
+                    message: message
+                })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                // Clear form immediately
+                document.getElementById('applicationMessage').value = '';
+                Array.from(document.querySelectorAll('.teacher-email')).forEach((input, index) => {
+                    if (index > 0) input.remove();
+                    else input.value = '';
+                });
+
+                statusEl.innerHTML = `
+                    <div class="success-notification" style="padding:1.5rem; background:rgba(104,211,145,0.1); border:1px solid var(--success); border-radius:var(--radius); margin-top:1.5rem; animation: sectionSlideUp 0.5s ease forwards;">
+                        <div style="display:flex; align-items:center; gap:1rem; color:var(--success); margin-bottom:1rem;">
+                            <i class="fas fa-paper-plane" style="font-size:1.8rem;"></i>
+                            <div>
+                                <h3 style="margin:0; font-size:1.2rem;">Application Sent!</h3>
+                                <p style="margin:0; font-size:0.85rem; opacity:0.8;">Reference ID: #${Math.floor(Math.random()*9000)+1000}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="color:var(--text-primary); font-size:0.95rem; line-height:1.6; margin-bottom:1.2rem;">
+                            Your request for <strong>${eventName}</strong> has been successfully sent to the requested faculty members. 
+                        </div>
+
+                        <div style="background:rgba(99,179,237,0.1); padding:1rem; border-radius:var(--radius-sm); border-left:4px solid var(--accent); display:flex; gap:0.8rem; align-items:flex-start;">
+                            <i class="fas fa-hand-point-right" style="color:var(--accent); margin-top:0.2rem;"></i>
+                            <div style="font-size:0.88rem; color:var(--text-primary);">
+                                <strong>What to do next:</strong><br/>
+                                Please personally meet or contact the assigned faculty members to obtain their permission. Once they approve it in their portal, you will see the update in your <strong>"Applications"</strong> section.
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="switchToSection('apply')" style="margin-top:1.2rem; width:100%;">
+                            <i class="fas fa-eye"></i> View Application Status
+                        </button>
+                    </div>
+                `;
+                
+                // Refresh data in background
+                loadStudentApplications();
+                
+                // Only clear the notification after a long time (15s) or if they navigate away
+                setTimeout(() => {
+                    if (statusEl.innerHTML.includes('Application Sent!')) {
+                        statusEl.innerHTML = '';
+                    }
+                }, 15000);
+            } else {
+                statusEl.style.color = '#e74c3c';
+                statusEl.textContent = data.message || 'Unable to submit application.';
+                // Show error for 5 seconds
+                setTimeout(() => {
+                    statusEl.textContent = '';
+                }, 5000);
+            }
+        }
+
+        async function loadStudentApplications() {
+            const email = document.getElementById('currentUserEmail').value.trim();
+            const response = await fetch(`/student_applications?email=${encodeURIComponent(email)}`);
+            const data = await response.json();
+            if (response.ok && data.success) {
+                studentApplicationsData = data.applications || [];
+                renderStudentApplications(studentApplicationsData);
+            }
+        }
+
+        function renderStudentApplications(applications) {
+            const selectedEvent = document.getElementById('applicationEventName').value.trim();
+            
+            // Strictly filter by selected event
+            if (!selectedEvent) {
+                const container = document.getElementById('studentApplicationsContainer');
+                if (container) container.innerHTML = '';
+                return;
+            }
+            
+            // Filter applications by selected event
+            applications = applications.filter(app => app.event_name === selectedEvent);
+            
+            // Check if any application for this event is approved
+            const hasApproval = applications.some(app => app.status === 'approved');
+            const submitBtn = document.querySelector('#apply .btn-success');
+            if (submitBtn) {
+                if (hasApproval) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-lock"></i> Application Approved';
+                    submitBtn.title = 'You already have an approved application for this event.';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application';
+                    submitBtn.title = '';
+                }
+            }
+            
+            let html = '<div class="welcome-section"><h3>Your Applications for ' + selectedEvent + '</h3></div>';
+            if (!applications.length) {
+                html += '<div class="no-results" style="grid-column:1/-1; padding:1.5rem;">No applications submitted yet for this event.</div>';
+            } else {
+                html += applications.map(app => {
+                    const isDecided = app.status === 'approved' || app.status === 'rejected';
+                    const isAcknowledged = app.student_acknowledged === 'yes';
+                    
+                    // Build faculty decision list
+                    let facultyDecisionsHtml = '';
+                    if (Array.isArray(app.teacher_emails) && app.teacher_emails.length > 0) {
+                        const totalTeachers = app.teacher_emails.length;
+                        const decisions = app.decision_by || {};
+                        const approvedCount = Object.values(decisions).filter(d => d === 'approved').length;
+                        
+                        facultyDecisionsHtml = `
+                            <div class="faculty-decisions-list">
+                                <div class="faculty-decisions-header">
+                                    <span><i class="fas fa-list"></i> Faculty Review Status</span>
+                                    <span style="font-size: 0.65rem; background: var(--bg-surface); padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid var(--border);">
+                                        ${approvedCount} of ${totalTeachers} Approved
+                                    </span>
+                                </div>
+                                <div class="faculty-decisions-table">
+                        `;
+                        
+                        app.teacher_emails.forEach(teacher => {
+                            let decisionBadge = 'Pending';
+                            let decisionClass = 'pending';
+                            
+                            // Check if this specific teacher has made a decision in the decisions object
+                            if (decisions[teacher.toLowerCase()]) {
+                                const teacherDecision = decisions[teacher.toLowerCase()];
+                                decisionBadge = teacherDecision === 'approved' ? '✓ Approved' : '✗ Rejected';
+                                decisionClass = teacherDecision === 'approved' ? 'approved' : 'rejected';
+                            }
+                            
+                            facultyDecisionsHtml += `
+                                <div class="faculty-row">
+                                    <div class="faculty-email"><i class="fas fa-envelope"></i> ${teacher}</div>
+                                    <div class="faculty-decision ${decisionClass}">${decisionBadge}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        facultyDecisionsHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show acknowledgement button only if decision is made
+                    let actionButtonHtml = '';
+                    if (isDecided) {
+                        if (!isAcknowledged) {
+                            actionButtonHtml = `
+                                <button class="btn btn-success" onclick="acknowledgeDecision(${app.app_id}, '${app.student_email}')">
+                                    <i class="fas fa-handshake"></i> Acknowledge Decision
+                                </button>
+                            `;
+                        } else {
+                            actionButtonHtml = `
+                                <div class="ack-confirmed">
+                                    <i class="fas fa-check-circle"></i> Decision Acknowledged
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    return `
+                        <div class="app-card ${app.status}">
+                            <div class="app-card-header">
+                                <div class="app-student-info">
+                                    <div class="app-student-name">${app.event_name}</div>
+                                    <div class="app-student-meta">
+                                        <span><i class="fas fa-user"></i> ${app.student_name}</span>
+                                        <span><i class="fas fa-envelope"></i> ${app.student_email}</span>
+                                    </div>
+                                </div>
+                                <span class="status-badge ${app.status}">${app.status.toUpperCase()}</span>
+                            </div>
+                            
+                            <div class="app-event-info">
+                                <div class="app-event-name"><i class="fas fa-comment"></i> Your Message</div>
+                                <div class="app-reason">${app.message}</div>
+                            </div>
+                            
+                            <div class="app-timestamp"><i class="fas fa-clock"></i> Submitted: ${app.submitted_at}</div>
+                            
+                            ${facultyDecisionsHtml}
+                            
+                            <div class="app-action-section">
+                                ${actionButtonHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            const container = document.getElementById('studentApplicationsContainer');
+            if (container) {
+                updateUISeamlessly(container, html);
+            }
+        }
+
+        async function acknowledgeDecision(appId, studentEmail) {
+            try {
+                const response = await fetch('/student_acknowledge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: appId,
+                        student_email: studentEmail
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    loadEvents(); // Trigger cleanup in backend if event is expired/deleted
+                    loadStudentApplications();
+                    alert('Decision acknowledged successfully!');
+                } else {
+                    alert('Failed to acknowledge decision: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error acknowledging decision:', error);
+                alert('Error acknowledging decision');
+            }
+        }
+
+        // Profile editing functions
+        function enableEditMode() {
+            const fields = [ 'FullName', 'Phone'];
+            
+            fields.forEach(field => {
+                document.getElementById(`display${field}`).classList.add('hidden');
+                document.getElementById(`input${field}`).classList.remove('hidden');
+            });
+
+            // Enable password fields
+            document.getElementById('inputPassword').classList.remove('hidden');
+            document.getElementById('confirmPassword').classList.remove('hidden');
+            
+            // Clear password fields
+            document.getElementById('inputPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+
+            document.getElementById('editBtn').classList.add('hidden');
+            document.getElementById('saveBtn').classList.remove('hidden');
+            document.getElementById('cancelBtn').classList.remove('hidden');
+        }
+
+        function disableEditMode() {
+            const fields = ['FullName', 'Phone'];
+            
+            fields.forEach(field => {
+                document.getElementById(`display${field}`).classList.remove('hidden');
+                document.getElementById(`input${field}`).classList.add('hidden');
+            });
+
+            // Hide and clear password fields
+            document.getElementById('inputPassword').classList.add('hidden');
+            document.getElementById('confirmPassword').classList.add('hidden');
+            document.getElementById('inputPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+
+            document.getElementById('editBtn').classList.remove('hidden');
+            document.getElementById('saveBtn').classList.add('hidden');
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        function saveProfile() {
+            const newFullName = document.getElementById('inputFullName').value.trim();
+            const newPhone = document.getElementById('inputPhone').value.trim();
+            const newPassword = document.getElementById('inputPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const currentEmail = document.getElementById('currentUserEmail').value.trim();
+
+            // Validate inputs
+            if (!newFullName || !newPhone) {
+                alert('❌ Please fill in Full Name and Phone Number!');
+                return;
+            }
+
+            // Validate password if provided
+            if (newPassword || confirmPassword) {
+                if (newPassword !== confirmPassword) {
+                    alert('❌ Passwords do not match!');
+                    return;
+                }
+                if (newPassword.length < 4) {
+                    alert('❌ Password must be at least 4 characters long!');
+                    return;
+                }
+            }
+
+            console.log('Saving profile...', {currentEmail, newFullName, newPhone, newPassword: newPassword ? '***' : ''});
+
+            // Show loading state
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('saveBtn').textContent = 'Saving...';
+
+            // Send data to backend
+            fetch('/update_profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_email: currentEmail,
+                    new_fullname: newFullName,
+                    new_phone: newPhone,
+                    new_password: newPassword || null
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    // Update all UI elements in real-time
+                    updateUserInfoRealtime(newFullName, newPhone, currentEmail);
+                    
+                    disableEditMode();
+                    alert('✅ Profile updated successfully!\n\nChanges saved to database.');
+                    console.log('Profile saved to database:', data);
+                } else {
+                    alert('❌ Error: ' + data.message);
+                    console.error('Error response:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Network Error:', error);
+                alert('❌ Network error updating profile. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('saveBtn').textContent = 'Save Changes';
+            });
+        }
+
+        function updateUserInfoRealtime(newFullName, newPhone, oldEmail) {
+            console.log('Updating UI in real-time...');
+            
+            // Update header username
+            document.getElementById('headerUsername').textContent = newFullName;
+            
+            // Update profile display names
+            document.getElementById('displayName').textContent = newFullName;
+            document.getElementById('displayFullName').textContent = newFullName;
+            document.getElementById('displayPhone').textContent = newPhone;
+            
+            // Update hidden input values
+            document.getElementById('currentUserPhone').value = newPhone;
+            document.getElementById('displayName').setAttribute('data-current-email', oldEmail);
+            
+            // Update input field values in case user edits again
+            document.getElementById('inputFullName').value = newFullName;
+            document.getElementById('inputPhone').value = newPhone;
+            
+            console.log('UI updated successfully');
+        }
+    </script>
+</body>
+</html>

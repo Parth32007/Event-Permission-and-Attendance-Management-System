@@ -1,0 +1,4 @@
+app_id,student_name,student_email,event_name,teacher_emails,message,status,decision_by,coordinator_ack,student_acknowledged,submitted_at,decided_at,student_ack_at
+9,John doe,john123@gmail.com,COLLEGE PARTY,"[""asd@gmail.com""]",asd@gmail.com please give me permission for this event,approved,"{""asd@gmail.com"": ""approved""}",no,yes,2026-04-24 19:50:04,2026-04-24 19:50:30,2026-04-24 20:11:38
+10,John doe,john123@gmail.com,ANOTHER PARTY,"[""asd@gmail.com""]",I NEED PERMISSION FOR THIS EVENT,rejected,"{""asd@gmail.com"": ""rejected""}",no,yes,2026-04-24 22:16:10,2026-04-24 22:18:46,2026-04-24 22:19:05
+11,John doe,john123@gmail.com,COLLEGE PARTY,"[""asd@gmail.com""]",asd,approved,"{""asd@gmail.com"": ""approved""}",no,yes,2026-04-24 22:33:52,2026-04-24 22:33:59,2026-04-24 23:07:40

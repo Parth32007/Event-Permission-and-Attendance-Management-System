@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Portal — Event Management System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* ======================================================
+       TEACHER PORTAL - UI POLISH
+       ====================================================== */
+
+    .filter-tabs {
+      display: flex !important;
+      gap: 0.6rem !important;
+      margin-bottom: 2rem !important;
+      flex-wrap: wrap !important;
+      padding: 0.85rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+    }
+    .filter-btn {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.52rem 1.1rem !important;
+      border-radius: 8px !important;
+      border: 1px solid var(--border) !important;
+      background: transparent !important;
+      color: var(--text-secondary) !important;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .filter-btn:hover {
+      background: rgba(99,179,237,0.08) !important;
+      border-color: var(--accent) !important;
+      color: var(--text-primary) !important;
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+      border-color: transparent !important;
+      color: #0a0c12 !important;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(99,179,237,0.3);
+    }
+    .filter-btn .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(255,255,255,0.22) !important;
+      color: inherit !important;
+      margin-left: 0.2rem;
+    }
+    .filter-btn.active .count-badge { background: rgba(10,12,18,0.25) !important; }
+
+    #applicationsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .app-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(22,26,40,0.85) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .app-card::before {
+      content: \'\';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    .app-card:hover { border-color: var(--border-active); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(99,179,237,0.15); }
+    .app-card:hover::before { opacity: 1; }
+    .app-card.pending  { border-left: 3px solid var(--warning); }
+    .app-card.approved { border-left: 3px solid var(--success); }
+    .app-card.rejected { border-left: 3px solid var(--danger);  }
+
+    .app-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+    .app-student-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+    .app-student-meta { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.35rem; }
+    .app-student-meta span { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; }
+    .app-student-meta i { color: var(--accent); font-size: 0.74rem; }
+
+    .status-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.28rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; flex-shrink: 0; }
+    .status-badge.pending  { background: rgba(246,173,85,0.15);  color: var(--warning); border: 1px solid rgba(246,173,85,0.35); }
+    .status-badge.approved { background: rgba(104,211,145,0.15); color: var(--success); border: 1px solid rgba(104,211,145,0.35); }
+    .status-badge.rejected { background: rgba(252,129,129,0.15); color: var(--danger);  border: 1px solid rgba(252,129,129,0.35); }
+
+    .app-event-info { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; }
+    .app-event-name { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
+    .app-reason { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+    .app-timestamp { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+    .app-timestamp i { color: var(--accent2); font-size: 0.74rem; }
+
+    .app-actions { display: flex; gap: 0.55rem; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+    .btn-approve, .btn-reject, .app-actions .btn-delete {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.48rem 1.1rem; border-radius: 8px;
+      font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: var(--transition); border: 1px solid transparent;
+    }
+    .btn-approve { background: rgba(104,211,145,0.1); color: var(--success); border-color: rgba(104,211,145,0.3); }
+    .btn-approve:hover { background: var(--success); color: #0a0c12; box-shadow: 0 4px 14px rgba(104,211,145,0.35); transform: translateY(-1px); }
+    .btn-reject { background: rgba(252,129,129,0.08); color: var(--danger); border-color: rgba(252,129,129,0.3); }
+    .btn-reject:hover { background: var(--danger); color: #0a0c12; box-shadow: 0 4px 14px rgba(252,129,129,0.35); transform: translateY(-1px); }
+    .app-actions .btn-delete { background: rgba(255,255,255,0.03); color: var(--text-muted); border-color: var(--border); margin-left: auto; }
+    .app-actions .btn-delete:hover { background: rgba(252,129,129,0.1); color: var(--danger); border-color: rgba(252,129,129,0.3); }
+
+    .decisions-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .summary-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(22,26,40,0.85) 100%);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.5rem; text-align: center; box-shadow: var(--shadow-card); transition: var(--transition);
+    }
+    .summary-card:hover { border-color: var(--border-active); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,179,237,0.12); }
+    .stat-number { font-family: var(--font-display); font-size: 2.4rem; font-weight: 900; line-height: 1; margin-bottom: 0.45rem; }
+    .stat-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-secondary); }
+
+    #decisionsContent { display: flex; flex-direction: column; gap: 0.75rem; }
+    .decision-item {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.1rem 1.4rem; display: grid; grid-template-columns: 1fr auto auto;
+      align-items: center; gap: 1rem; transition: var(--transition);
+    }
+    .decision-item:hover { border-color: var(--border-active); background: var(--bg-card-hover); }
+    .decision-item.approved { border-left: 3px solid var(--success); }
+    .decision-item.rejected { border-left: 3px solid var(--danger); }
+    .decision-item.pending  { border-left: 3px solid var(--warning); }
+    .decision-event { font-weight: 700; color: var(--text-primary); font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .decision-student { font-size: 0.82rem; color: var(--text-secondary); }
+    .decision-ack { font-size: 0.82rem; text-align: right; }
+
+    .no-apps {
+      grid-column: 1 / -1; text-align: center; padding: 3rem 2rem;
+      background: var(--bg-card); border: 1px dashed rgba(255,255,255,0.09);
+      border-radius: var(--radius); color: var(--text-secondary);
+    }
+    .no-apps i { font-size: 2.4rem; color: var(--text-muted); display: block; margin-bottom: 1rem; }
+    .no-apps p { font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header id="navbar">
+    <div class="navbar">
+      <div class="logo">
+        <i class="fas fa-chalkboard-teacher"></i> Teacher Portal
+      </div>
+
+      <ul class="nav-center">
+        <li>
+          <a onclick="switchTab('applications', this)" class="nav-link active">
+            <i class="fas fa-inbox"></i> Applications
+          </a>
+        </li>
+        <li>
+          <a onclick="switchTab('analytics', this)" class="nav-link">
+            <i class="fas fa-chart-bar"></i> Decisions
+          </a>
+        </li>
+        <li>
+          <a onclick="switchTab('profile', this)" class="nav-link">
+            <i class="fas fa-user-circle"></i> Profile
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-buttons">
+        <div class="user-greeting">Welcome, <strong id="teacherName">{{ usr }}</strong></div>
+        <input type="hidden" id="currentUserEmail" value="{{ rgml }}">
+        <input type="hidden" id="currentUserPhone" value="{{ pNo }}">
+        <button class="btn btn-danger" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- ===== APPLICATIONS SECTION ===== -->
+    <section id="applications" class="section active">
+      <div class="welcome-section">
+        <h1><i class="fas fa-inbox"></i> Student Applications</h1>
+        <p>Review and manage student event applications</p>
+      </div>
+
+      <!-- Filter Tabs with Badge Highlights -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="filterApps('all', this)" style="padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); border: 2px solid var(--border); background: var(--accent); color: white; cursor: pointer; font-weight: 500; transition: all 0.3s;">
+          <i class="fas fa-list"></i> All
+        </button>
+        <button class="filter-btn" onclick="filterApps('pending', this)" style="padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); border: 2px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-weight: 500; transition: all 0.3s;">
+          <i class="fas fa-clock"></i> Pending
+        </button>
+        <button class="filter-btn" onclick="filterApps('approved', this)" style="padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); border: 2px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-weight: 500; transition: all 0.3s;">
+          <i class="fas fa-check"></i> Approved
+        </button>
+        <button class="filter-btn" onclick="filterApps('rejected', this)" style="padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); border: 2px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-weight: 500; transition: all 0.3s;">
+          <i class="fas fa-ban"></i> Rejected
+        </button>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div id="loadingMsg" style="text-align:center; padding:2rem; color:var(--accent); display:none;">
+        <i class="fas fa-spinner fa-spin"></i> Loading applications...
+      </div>
+
+      <!-- Application Cards -->
+      <div id="applicationsGrid"></div>
+    </section>
+
+    <!-- ===== DECISIONS ANALYTICS SECTION ===== -->
+    <section id="analytics" class="section">
+      <div class="welcome-section">
+        <h1><i class="fas fa-chart-bar"></i> Your Decisions</h1>
+        <p>Track the status of all decisions you've made</p>
+      </div>
+
+      <!-- Decision Stats -->
+      <div class="decisions-summary">
+        <div class="summary-card">
+          <div class="summary-stat">
+            <div class="stat-number" id="totalDecisions" style="color:var(--accent);">0</div>
+            <div class="stat-label">Total Decisions</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-stat">
+            <div class="stat-number" id="respondedDecisions" style="color:var(--success);">0</div>
+            <div class="stat-label">Faculty Responded</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-stat">
+            <div class="stat-number" id="pendingFacultyResponse" style="color:var(--warning);">0</div>
+            <div class="stat-label">Waiting for Faculty</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decisions List -->
+      <div id="decisionsContent"></div>
+    </section>
+
+    <!-- ===== PROFILE SECTION ===== -->
+    <section id="profile" class="section">
+      <div class="welcome-section">
+        <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+        <p>View and update your teacher information</p>
+      </div>
+
+      <div class="profile-wrapper">
+        <div class="profile-container">
+          <div class="profile-header">
+            <div class="profile-avatar">👨‍🏫</div>
+            <h2 id="profileDisplayName">{{ usr }}</h2>
+          </div>
+
+          <div id="profileSuccess" class="success-msg" style="display:none;"></div>
+
+          <div class="profile-info">
+            <div class="info-group">
+              <label><i class="fas fa-user"></i> Full Name</label>
+              <p id="displayName">{{ usr }}</p>
+              <input type="text" id="inputName" value="{{ usr }}" class="hidden">
+            </div>
+
+            <div class="info-group">
+              <label><i class="fas fa-envelope"></i> Email</label>
+              <p id="displayEmail">{{ rgml }}</p>
+            </div>
+
+            <div class="info-group">
+              <label><i class="fas fa-phone"></i> Phone</label>
+              <p id="displayPhone">{{ pNo }}</p>
+              <input type="tel" id="inputPhone" value="{{ pNo }}" class="hidden">
+            </div>
+
+            <div class="info-group">
+              <label><i class="fas fa-lock"></i> New Password</label>
+              <input type="password" id="inputPassword" class="hidden" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="info-group">
+              <label><i class="fas fa-lock"></i> Confirm Password</label>
+              <input type="password" id="confirmPassword" class="hidden" placeholder="Confirm new password">
+            </div>
+
+            <div class="profile-buttons">
+              <button class="btn btn-primary" id="editBtn" onclick="enableEditMode()">
+                <i class="fas fa-edit"></i> Edit Profile
+              </button>
+              <button class="btn btn-success hidden" id="saveBtn" onclick="saveProfile()">
+                <i class="fas fa-save"></i> Save Changes
+              </button>
+              <button class="btn btn-secondary hidden" id="cancelBtn" onclick="cancelEdit()">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>
+    // ===== SEAMLESS UI UPDATER =====
+    function updateUISeamlessly(container, newHtml) {
+        if (!container || container.innerHTML === newHtml) return;
+        container.classList.add('silent-refresh');
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                container.innerHTML = newHtml;
+            });
+        } else {
+            container.innerHTML = newHtml;
+        }
+    }
+
+
+    // ===== APPLICATION DATA =====
+    let applications = [];
+    let currentFilter = 'all';
+
+    // ===== TAB SWITCHING =====
+    function switchTab(tabName, el) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      if (el) el.classList.add('active');
+      
+      // Re-enable animations on manual tab switch
+      document.querySelectorAll('.silent-refresh').forEach(e => e.classList.remove('silent-refresh'));
+      
+      // Load analytics when switching to analytics tab
+      if (tabName === 'analytics') {
+        loadDecisionsAnalytics();
+      }
+    }
+
+    // ===== UPDATE STATS =====
+    function updateStats() {
+      const pending = applications.filter(a => a.status === 'pending').length;
+      const approved = applications.filter(a => a.status === 'approved').length;
+      const rejected = applications.filter(a => a.status === 'rejected').length;
+      
+      // Update filter button badges
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(btn => {
+        let count = 0;
+        if (btn.textContent.includes('Pending')) count = pending;
+        else if (btn.textContent.includes('Approved')) count = approved;
+        else if (btn.textContent.includes('Rejected')) count = rejected;
+        else if (btn.textContent.includes('All')) count = pending + approved + rejected;
+        
+        // Remove old badge if exists
+        const oldBadge = btn.querySelector('.count-badge');
+        if (oldBadge) oldBadge.remove();
+        
+        // Add new badge
+        if (count > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'count-badge';
+          badge.textContent = count;
+          badge.style.cssText = 'margin-left: 0.5rem; background: white; color: var(--accent); padding: 0.2rem 0.6rem; border-radius: 50%; font-size: 0.75rem; font-weight: bold;';
+          btn.appendChild(badge);
+        }
+      });
+    }
+
+    // ===== RENDER APPLICATIONS =====
+    function renderApplications(filter) {
+      const filtered = filter === 'all' 
+        ? applications 
+        : applications.filter(a => a.status === filter);
+      
+      const grid = document.getElementById('applicationsGrid');
+
+      if (!filtered.length) {
+        const newHtml = `
+          <div class="no-apps" style="grid-column:1/-1; padding:2rem; text-align:center;">
+            <i class="fas fa-inbox" style="font-size:2rem; color:var(--text-secondary); margin-bottom:1rem;"></i>
+            <p style="color:var(--text-secondary);">No ${filter === 'all' ? '' : filter} applications found</p>
+          </div>
+        `;
+        updateUISeamlessly(grid, newHtml);
+        return;
+      }
+
+      const newHtml = filtered.map(app => {
+        return `
+          <div class="app-card ${app.status}">
+            <div class="app-card-header">
+              <div class="app-student-info">
+                <div class="app-student-name">${app.studentName}</div>
+                <div class="app-student-meta">
+                  <span><i class="fas fa-envelope"></i> ${app.studentEmail}</span>
+                  <span><i class="fas fa-calendar-star"></i> ${app.eventName}</span>
+                </div>
+              </div>
+              <span class="status-badge ${app.status}">${app.status.toUpperCase()}</span>
+            </div>
+            
+            <div class="app-event-info">
+              <div class="app-event-name"><i class="fas fa-comment"></i> Message</div>
+              <div class="app-reason">${app.reason}</div>
+            </div>
+            
+            <div class="app-timestamp">
+              <i class="fas fa-clock"></i> Submitted: ${app.submittedOn}
+            </div>
+            
+            ${app.status === 'pending' ? `
+              <div class="app-actions">
+                <button class="btn-approve" onclick="makeDecision(${app.id}, 'approved')">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn-reject" onclick="makeDecision(${app.id}, 'rejected')">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+                <button class="btn-delete" onclick="deleteApplication(${app.id}, '${app.studentName}')">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
+            ` : `
+              <div class="app-actions">
+                <button class="btn-delete" onclick="deleteApplication(${app.id}, '${app.studentName}')">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+      
+      updateUISeamlessly(grid, newHtml);
+    }
+
+    // ===== FILTER APPLICATIONS =====
+    function filterApps(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.borderColor = 'var(--border)';
+        b.style.color = 'var(--text)';
+      });
+      if (btn) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--accent)';
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'white';
+      }
+      
+      // Re-enable animations on manual filter switch
+      document.querySelectorAll('.silent-refresh').forEach(e => e.classList.remove('silent-refresh'));
+      
+      renderApplications(filter);
+    }
+
+    // ===== LOAD TEACHER APPLICATIONS =====
+    async function loadTeacherApplications() {
+      // Only show loading message if no data exists yet (initial load)
+      if (applications.length === 0) {
+        document.getElementById('loadingMsg').style.display = 'block';
+      }
+      try {
+        const email = document.getElementById('currentUserEmail').value.trim();
+        console.log('Loading applications for teacher:', email);
+        
+        const response = await fetch(`/teacher_applications?email=${encodeURIComponent(email)}`);
+        console.log('Response status:', response.status);
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success && data.applications) {
+          console.log('Applications found:', data.applications.length);
+          applications = data.applications.map(app => ({
+            id: app.app_id,
+            studentName: app.student_name,
+            studentEmail: app.student_email,
+            eventName: app.event_name,
+            reason: app.message,
+            status: app.status,
+            submittedOn: app.submitted_at,
+            teacherEmails: app.teacher_emails || [],
+            allDecisions: app.decision_by || {}
+          }));
+          updateStats();
+          renderApplications(currentFilter);
+        } else {
+          console.warn('No applications found or error in response:', data.message);
+          const newHtml = `
+            <div class="no-apps" style="grid-column:1/-1; padding:2rem; text-align:center;">
+              <i class="fas fa-inbox" style="font-size:2rem; color:var(--text-secondary); margin-bottom:1rem;"></i>
+              <p style="color:var(--text-secondary);">${data.message || 'No applications yet'}</p>
+            </div>
+          `;
+          updateUISeamlessly(document.getElementById('applicationsGrid'), newHtml);
+        }
+      } catch (error) {
+        console.error('Error loading applications:', error);
+        console.error('Error details:', error.message, error.stack);
+        updateUISeamlessly(document.getElementById('applicationsGrid'), `
+          <div style="grid-column:1/-1; padding:2rem; background:rgba(252,129,129,0.1); border:1px solid var(--danger); border-radius:var(--radius-sm); color:#e74c3c;">
+            <i class="fas fa-exclamation-circle"></i> Error loading applications: ${error.message}
+            <div style="font-size:0.8rem; margin-top:0.5rem; color:var(--text-secondary);">Please refresh the page or contact support</div>
+          </div>
+        `);
+      } finally {
+        document.getElementById('loadingMsg').style.display = 'none';
+      }
+    }
+
+    // ===== MAKE DECISION =====
+    async function makeDecision(appId, decision) {
+      const teacherEmail = document.getElementById('currentUserEmail').value.trim();
+      
+      try {
+        const response = await fetch('/application_decision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_id: appId,
+            decision: decision,
+            teacher_email: teacherEmail
+          })
+        });
+        
+        const data = await response.json();
+        if (response.ok && data.success) {
+          alert(`Application ${decision.toUpperCase()} successfully!`);
+          loadTeacherApplications();
+        } else {
+          alert('Error: ' + (data.message || 'Unable to update decision'));
+        }
+      } catch (error) {
+        console.error('Error making decision:', error);
+        alert('Error making decision');
+      }
+    }
+
+    async function deleteApplication(appId, studentName) {
+      if (!confirm(`Are you sure you want to delete the application from ${studentName}? This action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/delete_application', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_id: appId
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+          alert('Application deleted successfully!');
+          loadTeacherApplications();
+        } else {
+          alert('Error: ' + (data.message || 'Unable to delete application'));
+        }
+      } catch (error) {
+        console.error('Error deleting application:', error);
+        alert('Error deleting application');
+      }
+    }
+
+    // ===== LOAD DECISIONS ANALYTICS =====
+    async function loadDecisionsAnalytics() {
+      try {
+        const email = document.getElementById('currentUserEmail').value.trim();
+        const response = await fetch(`/teacher_applications?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          const decisions = data.applications.filter(a => a.status !== 'pending');
+          
+          // Calculate stats based on faculty responses
+          const total = decisions.length;
+          let responded = 0;
+          let notResponded = 0;
+          
+          decisions.forEach(d => {
+            // Check if this teacher has responded to this application
+            const allDecisions = d.decision_by || {};
+            if (allDecisions[email]) {
+              // This teacher has made a decision
+              responded++;
+            } else {
+              // This teacher hasn't responded yet
+              notResponded++;
+            }
+          });
+          
+          document.getElementById('totalDecisions').textContent = total;
+          document.getElementById('respondedDecisions').textContent = responded;
+          document.getElementById('pendingFacultyResponse').textContent = notResponded;
+          
+          // Render decisions list
+          renderDecisionsList(decisions, email);
+        }
+      } catch (error) {
+        console.error('Error loading decisions:', error);
+        updateUISeamlessly(document.getElementById('decisionsContent'), '<div style="color:#e74c3c;">Error loading decisions</div>');
+      }
+    }
+
+    // ===== RENDER DECISIONS LIST =====
+    function renderDecisionsList(decisions, teacherEmail) {
+      const content = document.getElementById('decisionsContent');
+      
+      if (!decisions.length) {
+        const newHtml = '<div class="no-apps" style="padding:2rem; text-align:center;"><i class="fas fa-inbox"></i><p>No decisions made yet</p></div>';
+        if (content.innerHTML !== newHtml) {
+          updateUISeamlessly(content, newHtml);
+        }
+        return;
+      }
+
+      const newHtml = decisions.map(d => {
+        const allDecisions = d.decision_by || {};
+        const totalTeachers = d.teacher_emails ? d.teacher_emails.length : 0;
+        const totalResponded = Object.keys(allDecisions).length;
+        const thisTeacherResponded = allDecisions[teacherEmail] ? true : false;
+        
+        let responseStatus = '';
+        if (totalTeachers > 0) {
+          const notResponded = totalTeachers - totalResponded;
+          if (thisTeacherResponded) {
+            responseStatus = `
+              <div style="color:var(--success); font-weight:600;">
+                <i class="fas fa-check-circle"></i> You Responded
+              </div>
+            `;
+          } else {
+            responseStatus = `
+              <div style="color:var(--warning); font-weight:600;">
+                <i class="fas fa-hourglass-half"></i> Waiting (${notResponded} of ${totalTeachers})
+              </div>
+            `;
+          }
+        }
+        
+        return `
+          <div class="decision-item ${d.status}">
+            <div class="decision-main">
+              <div class="decision-event">${d.event_name}</div>
+              <div class="decision-student">${d.student_name}</div>
+            </div>
+            <div class="decision-status">
+              <span class="status-badge ${d.status}">${d.status.toUpperCase()}</span>
+            </div>
+            <div class="decision-ack">
+              ${responseStatus}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      if (content.innerHTML !== newHtml) {
+        updateUISeamlessly(content, newHtml);
+      }
+    }
+
+    // ===== PROFILE MANAGEMENT =====
+    function enableEditMode() {
+      ['inputName', 'inputPhone', 'inputPassword', 'confirmPassword'].forEach(id => {
+        document.getElementById(id).classList.remove('hidden');
+      });
+      ['displayName', 'displayPhone', 'editBtn'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      ['saveBtn', 'cancelBtn'].forEach(id => {
+        document.getElementById(id).classList.remove('hidden');
+      });
+      
+      document.getElementById('inputPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }
+
+    function cancelEdit() {
+      ['displayName', 'displayPhone', 'editBtn'].forEach(id => {
+        document.getElementById(id).classList.remove('hidden');
+      });
+      ['inputName', 'inputPhone', 'inputPassword', 'confirmPassword', 'saveBtn', 'cancelBtn'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('inputName').value.trim();
+      const phone = document.getElementById('inputPhone').value.trim();
+      const password = document.getElementById('inputPassword').value.trim();
+      const confirmPassword = document.getElementById('confirmPassword').value.trim();
+      const email = document.getElementById('currentUserEmail').value.trim();
+
+      if (!name || !phone) {
+        alert('Name and Phone are required');
+        return;
+      }
+
+      if (password || confirmPassword) {
+        if (password !== confirmPassword) {
+          alert('❌ Passwords do not match!');
+          return;
+        }
+        if (password.length < 4) {
+          alert('❌ Password must be at least 4 characters long!');
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch('/update_profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            current_email: email,
+            new_fullname: name,
+            new_phone: phone,
+            new_password: password || null
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('profileSuccess').textContent = '✓ Profile updated successfully!';
+          document.getElementById('profileSuccess').style.display = 'block';
+          document.getElementById('displayName').textContent = name;
+          document.getElementById('displayPhone').textContent = phone;
+          document.getElementById('profileDisplayName').textContent = name;
+          setTimeout(() => {
+            document.getElementById('profileSuccess').style.display = 'none';
+            cancelEdit();
+          }, 2000);
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error updating profile');
+      }
+    }
+
+    // ===== LOGOUT =====
+    function handleLogout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = '/';
+      }
+    }
+
+    // ===== INITIALIZE =====
+    window.addEventListener('load', () => {
+      loadTeacherApplications();
+      // Refresh every 10 seconds
+      setInterval(loadTeacherApplications, 10000);
+    });
+  </script>
+</body>
+</html>

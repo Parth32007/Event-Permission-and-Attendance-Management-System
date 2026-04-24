@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> College Event Management & Attendance System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   
+
+  <style>
+    /* ── INDEX PAGE POLISH ── */
+
+    /* Scroll-to-top smooth feel for hero CTA */
+    .hero-buttons .btn {
+      min-width: 148px;
+    }
+
+    /* Auth box – polish form labels */
+    .auth-box .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-secondary);
+      margin-bottom: 0.35rem;
+    }
+
+    /* Full-width submit button */
+    #loginForm .btn-primary,
+    #registerForm .btn-primary {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* Feature cards grid in about section */
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+    .about-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      text-align: center;
+      transition: var(--transition);
+    }
+    .about-card:hover {
+      border-color: var(--border-active);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(99,179,237,0.12);
+    }
+    .about-card i {
+      font-size: 1.8rem;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+      display: block;
+    }
+    .about-card h3 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+    .about-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* Role selector in register form */
+    #regRole {
+      font-family: var(--font-body);
+    }
+
+    /* Subtle divider below login method tabs */
+    .login-method-tabs {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Footer year */
+    footer {
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+    <!-- HEADER & NAVIGATION -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <i class="fas fa-calendar-check"></i> Event Management & Attendance System
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="showLogin()">Sign In</button>
+                <button class="btn btn-primary" onclick="showRegister()">Register</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Manage College Events Effortlessly</h1>
+            <p>Streamline event organization and attendance tracking for colleges. Create, manage, and track all events in one powerful platform with real-time insights.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="showRegister()">
+                    <i class="fas fa-rocket"></i> Get Started
+                </button>
+                <button class="btn btn-secondary" onclick="scrollToAbout()">
+                    <i class="fas fa-info-circle"></i> Learn More
+                </button>
+            </div>
+            
+            
+            
+        </div>
+    </section>
+
+    <!-- AUTH SECTION -->
+    <section class="auth-section" id="features">
+        <div class="auth-container">
+            {% if error %}
+            <div class="error-msg" style="background: rgba(252,129,129,0.1); border: 1px solid rgba(252,129,129,0.3); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; color: var(--danger); font-size: 0.9rem; font-weight: 500; margin-bottom: 1.5rem; text-align: center; animation: fadeIn 0.3s ease;">
+                <i class="fas fa-exclamation-circle" style="margin-right: 0.4rem;"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- LOGIN FORM -->
+            <div class="auth-box" id="loginBox">
+                <h2><i class="fas fa-sign-in-alt"></i> Sign In</h2>
+                <p>Welcome back! Access your account</p>
+                
+                <!-- Login Method Tabs -->
+                <div class="login-method-tabs">
+                    <button type="button" class="tab-btn active" onclick="switchLoginMethod('email')" data-method="email">
+                        <i class="fas fa-envelope"></i> Email
+                    </button>
+                    <button type="button" class="tab-btn" onclick="switchLoginMethod('phone')" data-method="phone">
+                        <i class="fas fa-phone"></i> Phone
+                    </button>
+                </div>
+
+                <form id="loginForm" method="post" action="/">
+                    <!-- Email Login Fields -->
+                    <div id="emailLoginFields" class="login-fields">
+                        <div class="form-group">
+                            <label for="loginEmail">Email Address</label>
+                            <input type="email" id="loginEmail" placeholder="Enter your email" name="LOGEMAIL">
+                        </div>
+                    </div>
+
+                    <!-- Phone Login Fields -->
+                    <div id="phoneLoginFields" class="login-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="loginPhone">Phone Number</label>
+                            <input type="text" id="loginPhone" placeholder="Enter your phone number" name="LOGPHONE">
+                        </div>
+                    </div>
+
+                    <!-- Common Password Field -->
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required name="LOGPASS">
+                    </div>
+
+                    <input type="hidden" id="loginMethod" name="LOGIN_METHOD" value="email">
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                </form>
+                <div class="toggle-form">
+                    Don't have an account? <button onclick="switchToRegister()">Register here</button>
+                </div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div class="auth-box" id="registerBox" style="display: none;">
+                <h2><i class="fas fa-user-plus"></i> Create Account</h2>
+                <p>Join our Event Management System today</p>
+                <form id="registerForm" action="/" method="post">
+                    <!-- Registration will POST to Flask route at '/' -->
+                    <div class="form-group">
+                        <label for="regName">Full Name</label>
+                        <input type="text" id="regName" placeholder="Enter your full name" required name="FULLNAME">
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email Address</label>
+                        <input type="email" id="regEmail" placeholder="Enter your email" required name="REGEMAIL">
+                    </div>
+                    <div class="form-group">
+                        <label for="regRole">Role</label>
+                        <select id="regRole" name="ROLE" required>
+                            <option value="">Select your role</option>
+                            <option value="student">Student</option>
+                            <option value="organizer">Event Organizer</option>
+                            <option value="teacher">Faculty</option>
+                            <!-- <option value="admin">Administrator</option> -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" placeholder="Create a password" required name="PASSWORD">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="text" id="inputPhone" placeholder="Enter your Phone number" required name="PHONENUMBER">
+                    </div>
+                    <div class="form-group">
+                        <label for="regConfirmPassword">Confirm Password</label>
+                        <input type="password" id="regConfirmPassword" placeholder="Confirm your password" required name="REGPASSWORD">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                </form>
+                <div class="toggle-form">
+                    Already have an account? <button onclick="switchToLogin()">Sign in here</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section class="about-section" id="about">
+        <div class="about-container">
+            <div class="about-header">
+                <h2>About Event Management & Attendance System</h2>
+            </div>
+            <div class="usefulness-section" style="max-width: 900px; margin: 0 auto;">
+                <p>An Event Management and Attendance System is essential for modern colleges as it streamlines the entire event lifecycle from creation to evaluation. It eliminates manual registration processes, reduces administrative overhead, and provides real-time attendance tracking with digital check-ins using QR codes. The system enables seamless communication with students through automated notifications, generates comprehensive analytics for event success measurement, and maintains detailed records for compliance and reporting purposes. By centralizing all event information and attendance data, it improves accessibility, enhances the student experience, and allows colleges to make data-driven decisions for future events.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="footer">
+        <div class="footer-bottom">
+            <p>&copy; 2024 Event Management and Attendance System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Form switching functions
+        function switchToRegister() {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('registerBox').style.display = 'block';
+        }
+
+        function switchToLogin() {
+            document.getElementById('registerBox').style.display = 'none';
+            document.getElementById('loginBox').style.display = 'block';
+        }
+
+        function showLogin() {
+            switchToLogin();
+            document.querySelector('.auth-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showRegister() {
+            switchToRegister();
+            document.querySelector('.auth-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function scrollToAbout() {
+            document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form submission handlers
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const role = document.getElementById('regRole').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const confirmPassword = document.getElementById('regConfirmPassword').value.trim();
+            const phone = document.getElementById('inputPhone').value.trim();
+
+            console.log('[Register] Validating registration...');
+            console.log('[Register] Name:', name);
+            console.log('[Register] Email:', email);
+            console.log('[Register] Role:', role);
+            console.log('[Register] Phone:', phone);
+            console.log('[Register] Password is numeric:', /^\d+$/.test(password));
+
+            // Validate all fields are filled
+            if (!name || !email || !role || !password || !confirmPassword || !phone) {
+                e.preventDefault();
+                alert('❌ All fields are required!');
+                return;
+            }
+
+            // Validate password is numeric (all digits)
+            if (!/^\d+$/.test(password)) {
+                e.preventDefault();
+                alert('❌ Password must contain only numbers (e.g., 123456)!');
+                return;
+            }
+
+            // Validate password length
+            if (password.length < 3) {
+                e.preventDefault();
+                alert('❌ Password must be at least 3 digits long!');
+                return;
+            }
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('❌ Passwords do not match!');
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('❌ Please enter a valid email address!');
+                return;
+            }
+
+            // Validate phone is numeric
+            if (!/^\d{6,}$/.test(phone.replace(/[\s\-\+]/g, ''))) {
+                e.preventDefault();
+                alert('❌ Phone number must contain at least 6 digits!');
+                return;
+            }
+
+            console.log('[Register] All validations passed, submitting form...');
+            alert(`✅ Account created successfully! Welcome, ${name}!`);
+            // Allow normal form submission to Flask when all validations pass
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const loginMethod = document.getElementById('loginMethod').value;
+            const password = document.getElementById('loginPassword').value.trim();
+
+            console.log('[Login] Validating login...');
+            console.log('[Login] Method:', loginMethod);
+
+            if (!password) {
+                e.preventDefault();
+                alert('❌ Password is required!');
+                return;
+            }
+
+            if (!/^\d+$/.test(password)) {
+                e.preventDefault();
+                alert('❌ Password must be numeric!');
+                return;
+            }
+
+            if (loginMethod === 'email') {
+                const email = document.getElementById('loginEmail').value.trim();
+                console.log('[Login] Email:', email);
+                
+                if (!email) {
+                    e.preventDefault();
+                    alert('❌ Email is required!');
+                    return;
+                }
+            } else if (loginMethod === 'phone') {
+                const phone = document.getElementById('loginPhone').value.trim();
+                console.log('[Login] Phone:', phone);
+                
+                if (!phone) {
+                    e.preventDefault();
+                    alert('❌ Phone number is required!');
+                    return;
+                }
+            }
+
+            console.log('[Login] Submitting login form...');
+        });
+
+        // Login method switching
+        function switchLoginMethod(method) {
+            const emailFields = document.getElementById('emailLoginFields');
+            const phoneFields = document.getElementById('phoneLoginFields');
+            const tabs = document.querySelectorAll('.login-method-tabs .tab-btn');
+
+            // Update active tab
+            tabs.forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-method="${method}"]`).classList.add('active');
+
+            // Toggle form fields
+            if (method === 'email') {
+                emailFields.style.display = 'block';
+                phoneFields.style.display = 'none';
+                document.getElementById('loginEmail').required = true;
+                document.getElementById('loginPhone').required = false;
+                document.getElementById('loginMethod').value = 'email';
+            } else {
+                emailFields.style.display = 'none';
+                phoneFields.style.display = 'block';
+                document.getElementById('loginEmail').required = false;
+                document.getElementById('loginPhone').required = true;
+                document.getElementById('loginMethod').value = 'phone';
+            }
+
+            console.log('[Login] Switched to', method, 'login method');
+        }
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Add scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.animation = 'slideUp 0.6s ease-out forwards';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.about-card, .stat-item').forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

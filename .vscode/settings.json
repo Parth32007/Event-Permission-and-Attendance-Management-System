@@ -1,0 +1,12 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "javascript.validate.enable": false,
+    "html.validate.scripts": false,
+    "eslint.validate": false,
+    "[html]": {
+        "editor.formatOnSave": false
+    },
+    "[javascript]": {
+        "editor.formatOnSave": false
+    }
+}

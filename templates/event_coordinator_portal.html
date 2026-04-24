@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Coordinator - Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ══ EVENT COORDINATOR POLISH ══ */
+
+        /* ── Event Form Enhancements ── */
+        .event-creation-form {
+            position: relative;
+            z-index: 1;
+        }
+        .event-creation-form::after {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            z-index: -1;
+            border-radius: calc(var(--radius) + 1px);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .event-creation-form:hover::after {
+            opacity: 0.15;
+        }
+
+        /* ── Input Focus Ring Polish ── */
+        .form-group input:focus, 
+        .form-group textarea:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99,179,237,0.15), 0 0 0 3px var(--accent-glow);
+        }
+
+        /* ── Custom Picker Icon Pulse ── */
+        .picker-wrapper:focus-within .picker-icon {
+            animation: iconPulse 1.5s infinite alternate;
+        }
+        @keyframes iconPulse {
+            0% { transform: translateY(-50%) scale(1); filter: brightness(1); }
+            100% { transform: translateY(-50%) scale(1.1); filter: brightness(1.3); }
+        }
+
+        /* ── Event Card Polish ── */
+        .event-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .event-card .event-actions button {
+            opacity: 0.7;
+        }
+        .event-card:hover .event-actions button {
+            opacity: 1;
+        }
+        .event-card .event-actions button:hover {
+            transform: scale(1.1);
+        }
+
+        /* ── Profile Container Polish ── */
+        .profile-container {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .profile-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+        }
+
+        /* ── Modal Enhancements ── */
+        .modal-content {
+            border: 1px solid var(--accent);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,179,237,0.2);
+        }
+        
+        /* ── Empty States Polish ── */
+        .no-events {
+            animation: fadeIn 0.6s ease;
+        }
+        .no-events i {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* ── Expired Events ── */
+        .expired-event {
+            opacity: 0.7;
+            background: rgba(20, 20, 25, 0.4);
+            border: 1px dashed var(--danger);
+            filter: grayscale(0.4);
+            transition: var(--transition);
+        }
+        .expired-event:hover {
+            opacity: 0.85;
+            filter: grayscale(0.2);
+            border-style: solid;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== HEADER ===== -->
+    <header id="navbar">
+        <div class="navbar">
+            <div class="logo">
+                <i class="fas fa-calendar-days"></i> Event Coordinator
+            </div>
+
+            <ul class="nav-center">
+                <li><a onclick="switchTab('events')" class="nav-link active">Event Creation</a></li>
+                <li><a onclick="switchTab('profile')" class="nav-link">Profile</a></li>
+            </ul>
+
+            <div class="nav-buttons">
+                <div class="user-greeting">
+                    Welcome, <strong id="userName">{{ usr }}</strong>
+                </div>
+                <!-- Hidden data attributes to store current user info -->
+                <input type="hidden" id="currentUserEmail" value="{{ rgml }}">
+                <input type="hidden" id="currentUserPhone" value="{{ pNo }}">
+                <button class="btn btn-danger" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+        <!-- ===== EVENT CREATION SECTION ===== -->
+        <section id="events" class="section active">
+            <div class="welcome-section">
+                <h1><i class="fas fa-calendar-check"></i> Event Creation</h1>
+                <p>Create and manage college events effortlessly</p>
+            </div>
+
+            <!-- Create Event Form -->
+            <div class="event-creation-form">
+                <h2><i class="fas fa-plus-circle"></i> Create New Event</h2>
+                <div class="success-msg" id="successMsg"></div>
+
+                <form id="eventForm" onsubmit="handleEventSubmit(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-heading"></i> Event Name</label>
+                            <input type="text" id="eventName" placeholder="e.g., Tech Conference" required>
+                        </div>
+
+                        <div class="event-schedule-group">
+                            <div class="schedule-pair">
+                                <div class="schedule-label"><i class="fas fa-play-circle"></i> Start</div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-alt"></i> Date</label>
+                                    <div class="picker-wrapper">
+                                        <input type="date" id="eventStartDate" required>
+                                        <i class="fas fa-calendar-alt picker-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-clock"></i> Time</label>
+                                    <div class="picker-wrapper">
+                                        <input type="time" id="eventStartTime" required>
+                                        <i class="fas fa-clock picker-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="schedule-pair">
+                                <div class="schedule-label"><i class="fas fa-stop-circle"></i> End</div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-alt"></i> Date</label>
+                                    <div class="picker-wrapper">
+                                        <input type="date" id="eventEndDate" required>
+                                        <i class="fas fa-calendar-alt picker-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-clock"></i> Time</label>
+                                    <div class="picker-wrapper">
+                                        <input type="time" id="eventEndTime" required>
+                                        <i class="fas fa-clock picker-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                            <input type="text" id="eventLocation" placeholder="e.g., Auditorium Hall" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-align-left"></i> Description</label>
+                            <textarea id="eventDescription" placeholder="Describe your event..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary btn-clear" onclick="clearEventForm()">
+                            <i class="fas fa-redo"></i> Clear
+                        </button>
+                        <button type="submit" class="btn btn-success btn-create">
+                            <i class="fas fa-plus"></i> Create Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Events List -->
+            <div class="events-section">
+                <h2><i class="fas fa-list-check"></i> Your Published Events</h2>
+                <div class="events-grid" id="eventsList"></div>
+            </div>
+        </section>
+
+        <!-- ===== EDIT EVENT MODAL ===== -->
+        <div id="editEventModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Event</h2>
+                    <button class="modal-close" onclick="closeEditEventModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEventForm" onsubmit="handleEditEventSubmit(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><i class="fas fa-heading"></i> Event Name</label>
+                                <input type="text" id="editEventName" placeholder="e.g., Tech Conference" required>
+                            </div>
+
+                            <div class="event-schedule-group">
+                                <div class="schedule-pair">
+                                    <div class="schedule-label"><i class="fas fa-play-circle"></i> Start</div>
+                                    <div class="form-group">
+                                        <label><i class="fas fa-calendar-alt"></i> Date</label>
+                                        <div class="picker-wrapper">
+                                            <input type="date" id="editEventStartDate" required>
+                                            <i class="fas fa-calendar-alt picker-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fas fa-clock"></i> Time</label>
+                                        <div class="picker-wrapper">
+                                            <input type="time" id="editEventStartTime" required>
+                                            <i class="fas fa-clock picker-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="schedule-pair">
+                                    <div class="schedule-label"><i class="fas fa-stop-circle"></i> End</div>
+                                    <div class="form-group">
+                                        <label><i class="fas fa-calendar-alt"></i> Date</label>
+                                        <div class="picker-wrapper">
+                                            <input type="date" id="editEventEndDate" required>
+                                            <i class="fas fa-calendar-alt picker-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><i class="fas fa-clock"></i> Time</label>
+                                        <div class="picker-wrapper">
+                                            <input type="time" id="editEventEndTime" required>
+                                            <i class="fas fa-clock picker-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                                <input type="text" id="editEventLocation" placeholder="e.g., Auditorium Hall" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-align-left"></i> Description</label>
+                                <textarea id="editEventDescription" placeholder="Describe your event..." required></textarea>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="editEventId">
+
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PROFILE SECTION ===== -->
+        <section id="profile" class="section">
+            <div class="welcome-section">
+                <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+                <p>Manage your coordinator information</p>
+            </div>
+
+            <div class="profile-wrapper">
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <div class="profile-avatar">👔</div>
+                        <h2 id="profileName">Coordinator Name</h2>
+                    </div>
+
+                    <div class="success-msg" id="profileSuccessMsg"></div>
+
+                    <div class="profile-info">
+                        <div class="info-group">
+                            <label><i class="fas fa-user"></i> Full Name</label>
+                            <p id="displayName" class="display-field">{{ usr }}</p>
+                            <input type="text" id="inputName" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-envelope"></i> Email Address</label>
+                            <p id="displayEmail" class="display-field">{{ rgml }}</p>
+                            <input type="email" id="inputEmail" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-phone"></i> Phone Number</label>
+                            <p id="displayPhone" class="display-field">{{ pNo }}</p>
+                            <input type="tel" id="inputPhone" class="hidden">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-lock"></i> New Password</label>
+                            <input type="password" id="inputPassword" class="hidden" placeholder="Leave blank to keep current password">
+                        </div>
+
+                        <div class="info-group">
+                            <label><i class="fas fa-lock"></i> Confirm Password</label>
+                            <input type="password" id="confirmPassword" class="hidden" placeholder="Confirm new password">
+                        </div>
+                    </div>
+
+                    <div class="profile-buttons">
+                        <button class="btn btn-edit-profile" id="editBtn" onclick="enableEditMode()">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                        <button class="btn btn-save-profile hidden" id="saveBtn" onclick="saveProfile()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button class="btn btn-cancel-profile hidden" id="cancelBtn" onclick="disableEditMode()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+    // ===== SEAMLESS UI UPDATER =====
+    async function updateUISeamlessly(container, newHtml) {
+        if (!container || container.innerHTML === newHtml) return;
+        container.classList.add('silent-refresh');
+        if (document.startViewTransition) {
+            const transition = document.startViewTransition(() => {
+                container.innerHTML = newHtml;
+            });
+            try {
+                await transition.finished;
+            } catch (e) {
+                console.warn('View Transition failed:', e);
+                container.innerHTML = newHtml;
+            }
+        } else {
+            container.innerHTML = newHtml;
+        }
+    }
+
+
+        /* eslint-disable */
+        /* jshint ignore:start */
+
+        // ===== FUTURE-ONLY DATE/TIME LIMITS =====
+        /**
+         * Returns current local datetime in the format required by
+         * <input type="date"> (YYYY-MM-DD) and <input type="time"> (HH:MM).
+         */
+        function getNowParts() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+            const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            return { date, time, now };
+        }
+
+        /**
+         * Sets min attributes on all date/time inputs so only future
+         * values can be picked, for both Create and Edit forms.
+         */
+        function setDateTimeLimits() {
+            const { date: todayStr, time: nowTimeStr, now } = getNowParts();
+
+            // ── CREATE FORM ──────────────────────────────────────────
+            const startDateEl = document.getElementById('eventStartDate');
+            const startTimeEl = document.getElementById('eventStartTime');
+            const endDateEl   = document.getElementById('eventEndDate');
+            const endTimeEl   = document.getElementById('eventEndTime');
+
+            if (startDateEl) {
+                startDateEl.min = todayStr;
+                // If the chosen start date is today, restrict time to now+
+                if (startTimeEl) {
+                    startTimeEl.min = (startDateEl.value === todayStr) ? nowTimeStr : '00:00';
+                }
+            }
+
+            if (endDateEl && startDateEl) {
+                // End date must be >= start date (and at minimum today)
+                const minEndDate = startDateEl.value || todayStr;
+                endDateEl.min = minEndDate > todayStr ? minEndDate : todayStr;
+
+                if (endTimeEl) {
+                    const endDateVal = endDateEl.value || '';
+                    const startDateVal = startDateEl.value || '';
+                    if (endDateVal && endDateVal === startDateVal) {
+                        // Same day as start: end time must be after start time
+                        const minTime = startTimeEl && startTimeEl.value ? startTimeEl.value : nowTimeStr;
+                        endTimeEl.min = minTime;
+                    } else if (endDateVal === todayStr) {
+                        endTimeEl.min = nowTimeStr;
+                    } else {
+                        endTimeEl.min = '00:00';
+                    }
+                }
+            }
+
+            // ── EDIT FORM ────────────────────────────────────────────
+            const editStartDateEl = document.getElementById('editEventStartDate');
+            const editStartTimeEl = document.getElementById('editEventStartTime');
+            const editEndDateEl   = document.getElementById('editEventEndDate');
+            const editEndTimeEl   = document.getElementById('editEventEndTime');
+
+            if (editStartDateEl) {
+                editStartDateEl.min = todayStr;
+                if (editStartTimeEl) {
+                    editStartTimeEl.min = (editStartDateEl.value === todayStr) ? nowTimeStr : '00:00';
+                }
+            }
+
+            if (editEndDateEl && editStartDateEl) {
+                const minEndDate = editStartDateEl.value || todayStr;
+                editEndDateEl.min = minEndDate > todayStr ? minEndDate : todayStr;
+
+                if (editEndTimeEl) {
+                    const endDateVal   = editEndDateEl.value || '';
+                    const startDateVal = editStartDateEl.value || '';
+                    if (endDateVal && endDateVal === startDateVal) {
+                        const minTime = editStartTimeEl && editStartTimeEl.value ? editStartTimeEl.value : nowTimeStr;
+                        editEndTimeEl.min = minTime;
+                    } else if (endDateVal === todayStr) {
+                        editEndTimeEl.min = nowTimeStr;
+                    } else {
+                        editEndTimeEl.min = '00:00';
+                    }
+                }
+            }
+        }
+
+        // ===== SCROLL HIDE NAVBAR =====
+        let lastScrollTop = 0;
+        const navbar = document.getElementById('navbar');
+
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                navbar.classList.add('hide-nav');
+            } else {
+                navbar.classList.remove('hide-nav');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        });
+
+        // ===== LOCAL STORAGE =====
+        const STORAGE_KEY = 'coordinatorData';
+        
+        let events = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+            events: [
+                {
+                    id: 1,
+                    name: 'Sports Championship',
+                    startDate: '2026-03-25',
+                    startTime: '09:00',
+                    endDate: '2026-03-25',
+                    endTime: '17:00',
+                    location: 'Sports Ground',
+                    description: 'Join exciting sports competitions including cricket, badminton, and athletics.'
+                },
+                {
+                    id: 2,
+                    name: 'Tech Conference 2026',
+                    startDate: '2026-03-28',
+                    startTime: '10:00',
+                    endDate: '2026-03-28',
+                    endTime: '16:00',
+                    location: 'Auditorium Hall',
+                    description: 'Industry experts sharing insights on AI, Web Development, and Cloud Computing.'
+                }
+            ]
+        };
+
+        // Always set coordinator to current logged-in user
+        events.coordinator = {
+            name: '{{ usr }}',
+            email: '{{ rgml }}',
+            phone: '{{ pNo }}'
+        };
+
+        // ===== TAB SWITCHING =====
+        function switchTab(tab) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Re-enable animations on manual tab switch
+            document.querySelectorAll('.silent-refresh').forEach(e => e.classList.remove('silent-refresh'));
+        }
+
+        // ===== LOGOUT =====
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                saveDataToStorage();
+                window.location.href = '/';
+            }
+        }
+
+        // ===== SAFETY HELPERS =====
+        function safeGetElement(id) {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.error('[Safety] Element not found:', id);
+            }
+            return el;
+        }
+
+        // ===== EVENT FUNCTIONS =====
+        function handleEventSubmit(e) {
+            e.preventDefault();
+            createEvent();
+        }
+
+        function createEvent() {
+            // Refresh limits before reading values (user may have typed manually)
+            setDateTimeLimits();
+            console.log('[EVENT CREATION] Starting event creation...');
+            
+            const name = document.getElementById('eventName').value;
+            const startDate = document.getElementById('eventStartDate').value;
+            const startTime = document.getElementById('eventStartTime').value;
+            const endDate = document.getElementById('eventEndDate').value;
+            const endTime = document.getElementById('eventEndTime').value;
+            const location = document.getElementById('eventLocation').value;
+            const description = document.getElementById('eventDescription').value;
+
+            console.log('[EVENT CREATION] Form data:', {name, startDate, startTime, endDate, endTime, location, description});
+
+            // Validate all fields are filled and not just whitespace
+            if (!name.trim() || !startDate || !startTime || !endDate || !endTime || !location.trim() || !description.trim()) {
+                alert('❌ Please fill all fields before creating event');
+                console.error('[EVENT CREATION] Missing or empty fields!');
+                return;
+            }
+
+            // Proper date-time comparison (also blocks past start times)
+            try {
+                const now = new Date();
+                const startDateTime = new Date(`${startDate}T${startTime}`);
+                const endDateTime = new Date(`${endDate}T${endTime}`);
+                
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                    throw new Error('Invalid date/time format');
+                }
+
+                if (startDateTime <= now) {
+                    alert('❌ Start date/time must be in the future!');
+                    console.error('[EVENT CREATION] Start time is in the past:', startDateTime);
+                    return;
+                }
+                
+                if (endDateTime <= startDateTime) {
+                    alert('❌ End date/time must be after start date/time!');
+                    console.error('[EVENT CREATION] Invalid date range:', {startDateTime, endDateTime});
+                    return;
+                }
+            } catch (e) {
+                console.error('[EVENT CREATION] Date parsing error:', e);
+                alert('❌ Invalid date/time format. Please check your entries.');
+                return;
+            }
+
+            const newEvent = {
+                id: Date.now(),
+                name,
+                startDate,
+                startTime,
+                endDate,
+                endTime,
+                location,
+                description
+            };
+
+            console.log('[EVENT CREATION] Created event object:', newEvent);
+
+            // Save to localStorage
+            events.events.push(newEvent);
+            saveDataToStorage();
+            console.log('[Coordinator] Event saved to localStorage:', newEvent);
+
+            // Save to backend server with proper error handling
+            showSuccessMessage('Saving event to server...');
+            console.log('[EVENT CREATION] Sending to /save_event endpoint...');
+            
+            // Disable submit button to prevent duplicate submissions
+            const submitButton = document.querySelector('#eventForm button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            
+            fetch('/save_event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    startDate,
+                    startTime,
+                    endDate,
+                    endTime,
+                    location,
+                    description
+                })
+            })
+            .then(response => {
+                console.log('[Coordinator] Save response status:', response.status);
+                console.log('[Coordinator] Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    console.error('[Coordinator] Response not OK:', response.statusText);
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('[Coordinator] Event saved to server:', data);
+                showSuccessMessage('✓ Event saved! Students will see it immediately.');
+                console.log('[Coordinator] Event is now live for students to view');
+            })
+            .catch(error => {
+                console.error('[Coordinator] Error saving to server:', error);
+                console.error('[Coordinator] Error details:', error.message, error.stack);
+                console.error('[Coordinator] Full error:', error);
+                showSuccessMessage('⚠ Event saved locally but server error occurred. Please refresh.');
+            })
+            .finally(() => {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            });
+
+            clearEventForm();
+            loadEvents();
+        }
+
+        function clearEventForm() {
+            document.getElementById('eventForm').reset();
+        }
+
+        async function loadEvents() {
+            const eventsList = document.getElementById('eventsList');
+            
+            try {
+                // Fetch fresh events from server (which includes expiration cleanup)
+                const response = await fetch('/get_events');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch events: HTTP ' + response.status);
+                }
+                const serverEvents = await response.json();
+                
+                // Update local storage with server data
+                events.events = serverEvents || [];
+                saveDataToStorage();
+                
+                if (events.events.length === 0) {
+                    const newHtml = '<div class="no-events"><i class="fas fa-inbox"></i><p>No active events created yet</p></div>';
+                    await updateUISeamlessly(eventsList, newHtml);
+                    return;
+                }
+
+                // Render all events
+                const activeEvents = events.events;
+                const newHtml = activeEvents.map(event => {
+                    const now = new Date();
+                    const eventEndDateTime = new Date(`${event.endDate}T${event.endTime}`);
+                    const isExpired = eventEndDateTime <= now;
+                    const expiredClass = isExpired ? 'expired-event' : '';
+                    const expiredLabel = isExpired ? '<span style="color: var(--danger); font-weight: bold; margin-left: 1rem; font-size: 0.8rem; background: rgba(252,129,129,0.15); padding: 0.2rem 0.5rem; border-radius: 4px;"><i class="fas fa-clock"></i> Expired (Deleting soon)</span>' : '';
+                    
+                    const disabledAttr = isExpired ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
+                    
+                    return '<div class="event-card ' + expiredClass + '">' +
+                        '<div class="event-header">' +
+                            '<h3 style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;">' + event.name + expiredLabel + '</h3>' +
+                            '<div class="event-actions">' +
+                                '<button class="btn-edit" onclick="' + (isExpired ? 'return false;' : 'editEvent(' + event.id + ')') + '" title="Edit event" ' + disabledAttr + '><i class="fas fa-edit"></i></button>' +
+                                '<button class="btn-delete" onclick="' + (isExpired ? 'return false;' : 'deleteEvent(' + event.id + ')') + '" title="Delete event" ' + disabledAttr + '><i class="fas fa-trash"></i></button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="event-details">' +
+                            '<div class="event-meta">' +
+                                '<div class="meta-item"><i class="fas fa-play-circle" style="color: var(--accent); font-size: 1.1rem;"></i> <strong>Application Start:</strong> ' + event.startDate + ' ' + event.startTime + '</div>' +
+                                '<div class="meta-item"><i class="fas fa-stop-circle" style="color: var(--accent); font-size: 1.1rem;"></i> <strong>Application End:</strong> ' + event.endDate + ' ' + event.endTime + '</div>' +
+                                '<div class="meta-item"><i class="fas fa-map-marker-alt" style="color: var(--accent);"></i> <strong>Location:</strong> ' + event.location + '</div>' +
+                            '</div>' +
+                            '<p class="event-description">' + event.description + '</p>' +
+                        '</div>' +
+                        '<div class="event-students-section">' +
+                            '<div class="students-toggle" onclick="toggleStudentsList(' + event.id + ')">' +
+                                '<i class="fas fa-chevron-down"></i> <span class="toggle-text">View Student Approvals</span> <span class="student-count" id="count-' + event.id + '">0</span>' +
+                            '</div>' +
+                            '<div class="approved-students collapsed" id="approved-' + event.id + '">' +
+                                '<div class="loading-students"><i class="fas fa-spinner fa-spin"></i> Loading approvals...</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                // Wait for the UI update to finish so containers are available in the DOM
+                await updateUISeamlessly(eventsList, newHtml);
+
+                // Load approved students for each event (now containers are guaranteed to exist)
+                events.events.forEach(event => loadApprovedStudents(event.id, event.name));
+            } catch (error) {
+                console.error('[loadEvents] Error:', error);
+                eventsList.innerHTML = '<div class="no-events"><i class="fas fa-exclamation-circle"></i><p>Error loading events: ' + error.message + '</p></div>';
+            }
+        }
+
+        // Toggle student list visibility
+        function toggleStudentsList(eventId) {
+            const container = document.getElementById(`approved-${eventId}`);
+            container.classList.toggle('collapsed');
+            const toggle = container.previousElementSibling;
+            toggle.querySelector('i').classList.toggle('fa-chevron-down');
+            toggle.querySelector('i').classList.toggle('fa-chevron-up');
+        }
+
+        function loadApprovedStudents(eventId, eventName) {
+            fetch(`/event_approved_students/${encodeURIComponent(eventName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById(`approved-${eventId}`);
+                    if (!container) {
+                        console.warn(`[Approved Students] Container approved-${eventId} not found for event ${eventName}`);
+                        return;
+                    }
+
+                    if (data.success) {
+                        // Filter to show ONLY students with at least one approval
+                        const students = (data.students || []).filter(s => (s.approval_count || 0) > 0);
+                        
+                        // Update count badge to reflect only approved students
+                        const countEl = document.getElementById(`count-${eventId}`);
+                        if (countEl) countEl.textContent = students.length;
+                        
+                        if (students.length === 0) {
+                            updateUISeamlessly(container, '<div class="no-students"><i class="fas fa-check-circle"></i> No approved students yet</div>');
+                        } else {
+                            let html = '<div class="students-list-compact">';
+                            
+                            students.forEach((student) => {
+                                const approvalCount = student.approval_count || 0;
+                                const hasMultipleApprovals = student.has_multiple_approvals || false;
+                                
+                                let statusBadge = '';
+                                if (hasMultipleApprovals) {
+                                    statusBadge = '<span class="student-status multi-approval"><i class="fas fa-star"></i> ' + approvalCount + '</span>';
+                                } else if (approvalCount > 0) {
+                                    statusBadge = '<span class="student-status approved"><i class="fas fa-check"></i> Approved</span>';
+                                } else if (student.rejection_count > 0) {
+                                    statusBadge = '<span class="student-status rejected"><i class="fas fa-times"></i> Rejected</span>';
+                                } else {
+                                    statusBadge = '<span class="student-status pending"><i class="fas fa-clock"></i> Pending</span>';
+                                }
+                                
+                                let facultyList = '';
+                                if (student.decisions && Object.keys(student.decisions).length > 0) {
+                                    const decisions = Object.entries(student.decisions);
+                                    facultyList = decisions.map(([faculty, decision]) => {
+                                        const iconClass = decision === 'approved' ? 'check' : 'times';
+                                        return '<span class="faculty-tag ' + decision + '">' + faculty.split('@')[0] + ' <i class="fas fa-' + iconClass + '"></i></span>';
+                                    }).join('');
+                                }
+                                
+                                html += '<div class="student-card-compact">' +
+                                    '<div class="student-main">' +
+                                        '<div class="student-basic">' +
+                                            '<div class="student-name">' + student.student_name + '</div>' +
+                                            '<div class="student-email">' + student.student_email + '</div>' +
+                                        '</div>' +
+                                        statusBadge +
+                                    '</div>' +
+                                    (facultyList ? '<div class="faculty-inline">' + facultyList + '</div>' : '') +
+                                '</div>';
+                            });
+                            
+                            html += '</div>';
+                            updateUISeamlessly(container, html);
+                        }
+                    } else {
+                        updateUISeamlessly(container, '<div class="error-students"><i class="fas fa-exclamation-triangle"></i> Error loading data</div>');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    updateUISeamlessly(container, '<div class="error-students"><i class="fas fa-exclamation-triangle"></i> Error loading data</div>');
+                });
+        }
+
+        function editEvent(eventId) {
+            const event = events.events.find(e => e.id === eventId);
+            if (event) {
+                console.log('[EDIT EVENT] Opening modal for event:', event);
+                
+                // Populate form with event data
+                document.getElementById('editEventId').value = event.id;
+                document.getElementById('editEventName').value = event.name;
+                document.getElementById('editEventStartDate').value = event.startDate || '';
+                document.getElementById('editEventStartTime').value = event.startTime || '';
+                document.getElementById('editEventEndDate').value = event.endDate || '';
+                document.getElementById('editEventEndTime').value = event.endTime || '';
+                document.getElementById('editEventLocation').value = event.location;
+                document.getElementById('editEventDescription').value = event.description;
+                
+                // Apply future-only limits after populating values
+                setDateTimeLimits();
+
+                // Show modal
+                document.getElementById('editEventModal').style.display = 'block';
+            }
+        }
+
+        function closeEditEventModal() {
+            document.getElementById('editEventModal').style.display = 'none';
+            document.getElementById('editEventForm').reset();
+        }
+
+        function handleEditEventSubmit(e) {
+            e.preventDefault();
+            updateEvent();
+        }
+
+        function updateEvent() {
+            console.log('[UPDATE EVENT] Starting event update...');
+            
+            const eventId = parseInt(document.getElementById('editEventId').value);
+            const name = document.getElementById('editEventName').value;
+            const startDate = document.getElementById('editEventStartDate').value;
+            const startTime = document.getElementById('editEventStartTime').value;
+            const endDate = document.getElementById('editEventEndDate').value;
+            const endTime = document.getElementById('editEventEndTime').value;
+            const location = document.getElementById('editEventLocation').value;
+            const description = document.getElementById('editEventDescription').value;
+
+            console.log('[UPDATE EVENT] Form data:', {eventId, name, startDate, startTime, endDate, endTime, location, description});
+
+            // Validate all fields are filled
+            if (!name.trim() || !startDate || !startTime || !endDate || !endTime || !location.trim() || !description.trim()) {
+                alert('❌ Please fill all fields before updating event');
+                console.error('[UPDATE EVENT] Missing or empty fields!');
+                return;
+            }
+
+            // Proper date-time comparison (also blocks past start times)
+            try {
+                const now = new Date();
+                const startDateTime = new Date(`${startDate}T${startTime}`);
+                const endDateTime = new Date(`${endDate}T${endTime}`);
+                
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                    throw new Error('Invalid date/time format');
+                }
+
+                if (startDateTime <= now) {
+                    alert('❌ Start date/time must be in the future!');
+                    console.error('[UPDATE EVENT] Start time is in the past:', startDateTime);
+                    return;
+                }
+                
+                if (endDateTime <= startDateTime) {
+                    alert('❌ End date/time must be after start date/time!');
+                    console.error('[UPDATE EVENT] Invalid date range:', {startDateTime, endDateTime});
+                    return;
+                }
+            } catch (e) {
+                console.error('[UPDATE EVENT] Date parsing error:', e);
+                alert('❌ Invalid date/time format. Please check your entries.');
+                return;
+            }
+
+            console.log('[UPDATE EVENT] Validation passed, sending to server...');
+            
+            // Show loading state
+            const submitButton = document.querySelector('#editEventForm button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            
+            fetch('/update_event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: eventId,
+                    name,
+                    startDate,
+                    startTime,
+                    endDate,
+                    endTime,
+                    location,
+                    description
+                })
+            })
+            .then(response => {
+                console.log('[UPDATE EVENT] Server response status:', response.status);
+                
+                if (!response.ok) {
+                    console.error('[UPDATE EVENT] Response not OK:', response.statusText);
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('[UPDATE EVENT] Server response:', data);
+                if (data.success) {
+                    showSuccessMessage('✓ Event updated successfully!');
+                    
+                    // Update local storage
+                    const eventIndex = events.events.findIndex(e => e.id === eventId);
+                    if (eventIndex !== -1) {
+                        events.events[eventIndex] = {
+                            id: eventId,
+                            name,
+                            startDate,
+                            startTime,
+                            endDate,
+                            endTime,
+                            location,
+                            description
+                        };
+                        saveDataToStorage();
+                    }
+                    
+                    // Close modal and reload events
+                    closeEditEventModal();
+                    loadEvents();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('[UPDATE EVENT] Error:', error);
+                alert('❌ Error updating event. Please try again.');
+            })
+            .finally(() => {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            });
+        }
+
+        // Automatically delete expired events from the server
+        function cleanupExpiredEvents() {
+            const now = new Date();
+            const expiredEventIds = events.events
+                .filter(event => {
+                    try {
+                        const eventEndDateTime = new Date(`${event.endDate}T${event.endTime}`);
+                        return eventEndDateTime <= now;
+                    } catch (e) {
+                        return false;
+                    }
+                })
+                .map(event => event.id);
+
+            if (expiredEventIds.length === 0) {
+                console.log('[Cleanup] No expired events to clean up');
+                return;
+            }
+
+            console.log('[Cleanup] Found ' + expiredEventIds.length + ' expired events to delete');
+            
+            // Delete each expired event
+            expiredEventIds.forEach(eventId => {
+                fetch('/delete_event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: eventId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('[Cleanup] Expired event deleted:', eventId, data);
+                })
+                .catch(error => {
+                    console.error('[Cleanup] Error deleting expired event ' + eventId + ':', error);
+                });
+            });
+        }
+
+        function deleteEvent(eventId) {
+            const event = events.events.find(e => e.id === eventId);
+            const eventName = event ? event.name : 'this event';
+            
+            if (confirm(`Are you sure you want to delete "${eventName}"? This action cannot be undone.`)) {
+                console.log('[DELETE EVENT] Deleting event ID:', eventId);
+                
+                // Send delete request to server
+                fetch('/delete_event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: eventId
+                    })
+                })
+                .then(response => {
+                    console.log('[DELETE EVENT] Server response status:', response.status);
+                    
+                    if (!response.ok) {
+                        console.error('[DELETE EVENT] Response not OK:', response.statusText);
+                        throw new Error('HTTP error! status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('[DELETE EVENT] Server response:', data);
+                    if (data.success) {
+                        // Remove from local storage
+                        events.events = events.events.filter(e => e.id !== eventId);
+                        saveDataToStorage();
+                        
+                        // Reload events list
+                        loadEvents();
+                        showSuccessMessage('✓ Event deleted successfully!');
+                    } else {
+                        alert('❌ Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('[DELETE EVENT] Error:', error);
+                    alert('❌ Error deleting event. Please try again.');
+                });
+            }
+        }
+
+        // ===== PROFILE FUNCTIONS =====
+        function loadProfile() {
+            const coordinator = events.coordinator;
+            
+            document.getElementById('userName').textContent = coordinator.name;
+            document.getElementById('profileName').textContent = coordinator.name;
+            document.getElementById('displayName').textContent = coordinator.name;
+            document.getElementById('displayEmail').textContent = coordinator.email;
+            document.getElementById('displayPhone').textContent = coordinator.phone;
+            
+            document.getElementById('inputName').value = coordinator.name;
+            document.getElementById('inputEmail').value = coordinator.email;
+            document.getElementById('inputPhone').value = coordinator.phone;
+        }
+
+        function enableEditMode() {
+            const fields = ['Name', 'Phone'];
+            fields.forEach(field => {
+                document.getElementById(`display${field}`).classList.add('hidden');
+                document.getElementById(`input${field}`).classList.remove('hidden');
+            });
+            
+            // Enable password fields
+            document.getElementById('inputPassword').classList.remove('hidden');
+            document.getElementById('confirmPassword').classList.remove('hidden');
+            
+            // Clear password fields
+            document.getElementById('inputPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            document.getElementById('editBtn').classList.add('hidden');
+            document.getElementById('saveBtn').classList.remove('hidden');
+            document.getElementById('cancelBtn').classList.remove('hidden');
+        }
+
+        function disableEditMode() {
+            const fields = ['Name', 'Phone'];
+            fields.forEach(field => {
+                document.getElementById(`display${field}`).classList.remove('hidden');
+                document.getElementById(`input${field}`).classList.add('hidden');
+            });
+            
+            // Hide and clear password fields
+            document.getElementById('inputPassword').classList.add('hidden');
+            document.getElementById('confirmPassword').classList.add('hidden');
+            document.getElementById('inputPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            document.getElementById('editBtn').classList.remove('hidden');
+            document.getElementById('saveBtn').classList.add('hidden');
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        function saveProfile() {
+            const newFullName = document.getElementById('inputName').value.trim();
+            const newPhone = document.getElementById('inputPhone').value.trim();
+            const newPassword = document.getElementById('inputPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const currentEmail = document.getElementById('currentUserEmail').value.trim();
+
+            // Validate inputs
+            if (!newFullName || !newPhone) {
+                alert('❌ Please fill in Full Name and Phone Number!');
+                return;
+            }
+
+            // Validate password if provided
+            if (newPassword || confirmPassword) {
+                if (newPassword !== confirmPassword) {
+                    alert('❌ Passwords do not match!');
+                    return;
+                }
+                if (newPassword.length < 4) {
+                    alert('❌ Password must be at least 4 characters long!');
+                    return;
+                }
+            }
+
+            console.log('Saving profile...', {currentEmail, newFullName, newPhone, newPassword: newPassword ? '***' : ''});
+
+            // Show loading state
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('saveBtn').textContent = 'Saving...';
+
+            // Send data to backend
+            fetch('/update_profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_email: currentEmail,
+                    new_fullname: newFullName,
+                    new_phone: newPhone,
+                    new_password: newPassword || null
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    // Update local storage and UI
+                    events.coordinator.name = newFullName;
+                    events.coordinator.phone = newPhone;
+                    saveDataToStorage();
+                    
+                    // Update all UI elements in real-time
+                    updateUserInfoRealtime(newFullName, newPhone, currentEmail);
+                    
+                    disableEditMode();
+                    alert('✅ Profile updated successfully!\n\nChanges saved to database.');
+                    console.log('Profile saved to database:', data);
+                } else {
+                    alert('❌ Error: ' + data.message);
+                    console.error('Error response:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Network Error:', error);
+                alert('❌ Network error updating profile. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('saveBtn').textContent = 'Save Changes';
+            });
+        }
+
+        function updateUserInfoRealtime(newFullName, newPhone, oldEmail) {
+            console.log('Updating UI in real-time...');
+            
+            // Update header username
+            document.getElementById('userName').textContent = newFullName;
+            
+            // Update profile display names
+            document.getElementById('profileName').textContent = newFullName;
+            document.getElementById('displayName').textContent = newFullName;
+            document.getElementById('displayPhone').textContent = newPhone;
+            
+            // Update hidden input values
+            document.getElementById('currentUserPhone').value = newPhone;
+            
+            // Update input field values in case user edits again
+            document.getElementById('inputName').value = newFullName;
+            document.getElementById('inputPhone').value = newPhone;
+            
+            console.log('UI updated successfully');
+        }
+
+        // ===== UTILITY FUNCTIONS =====
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+                console.log('[Storage] Data saved to localStorage successfully');
+            } catch (error) {
+                console.error('[Storage] Error saving to localStorage:', error);
+                if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                    alert('❌ Storage quota exceeded. Please clear browser data and try again.');
+                } else if (error.name === 'SecurityError') {
+                    alert('❌ localStorage is disabled. Please enable cookies in your browser settings.');
+                } else {
+                    alert('❌ Error saving data: ' + error.message);
+                }
+            }
+        }
+
+        function showSuccessMessage(message) {
+            const msg = document.getElementById('successMsg');
+            msg.textContent = '✓ ' + message;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        // ===== ANALYTICS FUNCTIONS =====
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/event_analytics');
+                const data = await response.json();
+                if (data.success) {
+                    displayAnalytics(data.analytics);
+                } else {
+                    console.error('Failed to load analytics:', data.message);
+                    document.getElementById('analyticsContent').innerHTML = '<p style="color: #e74c3c;">Failed to load analytics</p>';
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                updateUISeamlessly(document.getElementById('analyticsContent'), '<p style="color: #e74c3c;">Error loading analytics</p>');
+            }
+        }
+
+        function displayAnalytics(analytics) {
+            let html = '';
+            
+            if (!analytics || analytics.length === 0) {
+                html += '<div class="no-results" style="grid-column:1/-1; padding:1.5rem; text-align: center;"><i class="fas fa-inbox"></i> No approved applications yet</div>';
+            } else {
+                html += '<div class="welcome-section"><h2>Approved Applications by Event</h2></div>';
+                
+                analytics.forEach(event => {
+                    html += '<div class="event-analytics-card">' +
+                        '<div class="event-title-section">' +
+                            '<h3><i class="fas fa-calendar-alt"></i> ' + event.event_name + '</h3>' +
+                            '<div class="attendance-stats">' +
+                                '<div class="stat-item">' +
+                                    '<span class="stat-label">Total Approved</span>' +
+                                    '<span class="stat-value approved">' + event.total_approved + '</span>' +
+                                '</div>' +
+                                '<div class="stat-item">' +
+                                    '<span class="stat-label">Confirmed Attendance</span>' +
+                                    '<span class="stat-value confirmed">' + event.student_acknowledged + '</span>' +
+                                '</div>' +
+                                '<div class="stat-item">' +
+                                    '<span class="stat-label">Pending Confirmation</span>' +
+                                    '<span class="stat-value pending">' + event.pending_ack + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="applications-list">';
+                    
+                    if (event.applications && event.applications.length > 0) {
+                        event.applications.forEach(app => {
+                            html += '<div class="app-item ' + app.status + '">' +
+                                '<div class="app-info">' +
+                                    '<div class="student-name">' + app.student_name + '</div>' +
+                                    '<div class="student-email">' + app.student_email + '</div>' +
+                                '</div>' +
+                                '<div class="app-status">';
+                            
+                            if (app.status === 'confirmed') {
+                                html += '<div class="status-badge confirmed">' +
+                                    '<i class="fas fa-check-circle"></i> Confirmed' +
+                                '</div>' +
+                                '<div class="ack-time">' + (app.acknowledged_at || 'N/A') + '</div>';
+                            } else {
+                                html += '<div class="status-badge pending">' +
+                                    '<i class="fas fa-clock"></i> Pending' +
+                                '</div>';
+                            }
+                            
+                            html += '</div></div>';
+                        });
+                    }
+                    
+                    html += '</div></div>';
+                });
+            }
+            
+            document.getElementById('analyticsContent').innerHTML = html;
+        }
+
+        // ===== INITIALIZATION =====
+        window.addEventListener('load', function() {
+            loadProfile();
+            loadEvents();
+            
+            // Set future-only limits immediately
+            setDateTimeLimits();
+
+            // Re-apply limits every 60 seconds (so midnight rollover is handled)
+            setInterval(setDateTimeLimits, 60000);
+
+            // ── CREATE FORM: update end limits when start changes ──
+            document.getElementById('eventStartDate').addEventListener('change', setDateTimeLimits);
+            document.getElementById('eventStartTime').addEventListener('change', setDateTimeLimits);
+            document.getElementById('eventEndDate').addEventListener('change', setDateTimeLimits);
+
+            // ── EDIT FORM: update end limits when start changes ──
+            document.getElementById('editEventStartDate').addEventListener('change', setDateTimeLimits);
+            document.getElementById('editEventStartTime').addEventListener('change', setDateTimeLimits);
+            document.getElementById('editEventEndDate').addEventListener('change', setDateTimeLimits);
+
+            // Cleanup expired events immediately, then every 5 minutes
+            cleanupExpiredEvents();
+            
+            // Refresh events every 30 seconds to check for expired events
+            setInterval(() => {
+                console.log('[Coordinator] Checking for expired events...');
+                loadEvents();
+            }, 30000);
+            
+            // Auto-cleanup expired events every 5 minutes (300 seconds)
+            setInterval(() => {
+                console.log('[Coordinator] Running automatic cleanup of expired events...');
+                cleanupExpiredEvents();
+            }, 300000);
+        });
+        
+        /* jshint ignore:end */
+        /* eslint-enable */
+    </script>
+</body>
+</html>
