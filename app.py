@@ -20,7 +20,7 @@ def add_cors_headers(response):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        db = pd.read_csv("database\\reg.csv")
+        db = pd.read_csv("database\reg.csv")
         
         # Check if this is a login or registration request
         login_method = request.form.get('LOGIN_METHOD', '').strip().lower()
