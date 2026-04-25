@@ -1,4 +1,4 @@
-# College Event Management System (CEMS)
+# Event-Permission-and-Attendance-Management-System 
 
 A premium, full-featured web application for managing college events, permissions, and student applications. Built with a "Dark Academic" aesthetic, this portal streamlines the workflow between Students, Faculty, and Event Coordinators.
 
