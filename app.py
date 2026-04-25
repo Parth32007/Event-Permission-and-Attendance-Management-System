@@ -157,7 +157,7 @@ def home():
                 }])
 
                 # Append to CSV
-                new_row.to_csv("database\\reg.csv", mode="a", header=False, index=False)
+                new_row.to_csv("database\reg.csv", mode="a", header=False, index=False)
                 print(f"[REGISTER SUCCESS] New user registered: {fullname} ({role})", flush=True)
 
                 if role == 'student':
@@ -251,7 +251,7 @@ def submit_application():
             return jsonify({'success': False, 'message': 'At least one teacher email is required.'}), 400
 
         # Validate teacher emails exist in registration database
-        db = pd.read_csv("database\\reg.csv")
+        db = pd.read_csv("database\reg.csv")
         registered_teachers = set()
         for _, row in db.iterrows():
             if str(row['ROLE']).strip().lower() == 'teacher':
@@ -524,7 +524,7 @@ def update_profile():
                 }), 400
         
         # Read the CSV file
-        db = pd.read_csv("database\\reg.csv")
+        db = pd.read_csv("database\reg.csv")
         print(f"[DEBUG] Loaded database with {len(db)} rows", flush=True)
         print(f"[DEBUG] Database emails (lowercase): {[str(email).strip().lower() for email in db['REGEMAIL']]}", flush=True)
         print(f"[DEBUG] Column dtypes: {db.dtypes.to_dict()}", flush=True)
@@ -565,8 +565,8 @@ def update_profile():
             }), 404
         
         # Save the updated CSV file with proper formatting
-        db.to_csv("database\\reg.csv", index=False)
-        print(f"[DEBUG] Database saved successfully to database\\reg.csv", flush=True)
+        db.to_csv("database\reg.csv", index=False)
+        print(f"[DEBUG] Database saved successfully to database\reg.csv", flush=True)
         
         return jsonify({
             "success": True, 
@@ -607,7 +607,7 @@ def ensure_events_file():
 def get_teachers():
     """Get list of registered teachers for student application form"""
     try:
-        db = pd.read_csv("database\\reg.csv")
+        db = pd.read_csv("database\reg.csv")
         teachers = []
         for _, row in db.iterrows():
             if str(row['ROLE']).strip().lower() == 'teacher':
