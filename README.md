@@ -1,4 +1,4 @@
-# Event-Permission-and-Attendance-Management-System 
+# Event Permission and Attendance Management System 
 
 A premium, full-featured web application for managing college events, permissions, and student applications. Built with a "Dark Academic" aesthetic, this portal streamlines the workflow between Students, Faculty, and Event Coordinators.
 
@@ -6,7 +6,7 @@ A premium, full-featured web application for managing college events, permission
 
 ## 🌟 Project Overview
 
-CEMS is designed to automate the process of obtaining faculty permission for college events. It replaces traditional paper-based systems with a digital workflow where students can apply for permissions, faculty can review them in real-time, and event coordinators can oversee the entire process.
+Event Permission and Attendance Management System is designed to automate the process of obtaining faculty permission for college events. It replaces traditional paper-based systems with a digital workflow where students can apply for permissions, faculty can review them in real-time, and event coordinators can oversee the entire process.
 
 ### 🎭 User Roles
 
